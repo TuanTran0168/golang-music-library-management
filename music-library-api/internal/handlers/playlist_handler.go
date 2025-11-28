@@ -99,7 +99,7 @@ func (h *PlaylistHandler) GetPlaylistByID(c *gin.Context) {
 	c.JSON(http.StatusOK, pl)
 }
 
-// PUT /playlists/:id
+// PATCH /playlists/:id
 func (h *PlaylistHandler) UpdatePlaylist(c *gin.Context) {
 	idStr := c.Param("id")
 

@@ -89,9 +89,10 @@ func (h *TrackHandler) CreateTrack(c *gin.Context) {
 	c.JSON(http.StatusCreated, track)
 }
 
-// PUT /tracks/:id
+// PATCH /tracks/:id
 func (h *TrackHandler) UpdateTrack(c *gin.Context) {
 	id := c.Param("id")
+
 	track, err := h.service.GetTrackByID(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "track not found"})
@@ -104,13 +105,27 @@ func (h *TrackHandler) UpdateTrack(c *gin.Context) {
 		return
 	}
 
-	track.Title = req.Title
-	track.Artist = req.Artist
-	track.Album = req.Album
-	track.Genre = req.Genre
-	track.ReleaseYear = req.ReleaseYear
-	track.Duration = req.Duration
-	track.URL = req.MP3URL
+	if req.Title != "" {
+		track.Title = req.Title
+	}
+	if req.Artist != "" {
+		track.Artist = req.Artist
+	}
+	if req.Album != "" {
+		track.Album = req.Album
+	}
+	if req.Genre != "" {
+		track.Genre = req.Genre
+	}
+	if req.ReleaseYear != 0 {
+		track.ReleaseYear = req.ReleaseYear
+	}
+	if req.Duration != 0 {
+		track.Duration = req.Duration
+	}
+	if req.MP3URL != "" {
+		track.URL = req.MP3URL
+	}
 
 	if err := h.service.UpdateTrack(track); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
