@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"io"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/hajimehoshi/go-mp3"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type TrackCreateRequest struct {
@@ -18,8 +20,9 @@ type TrackCreateRequest struct {
 	Album       string                `form:"album"`
 	Genre       string                `form:"genre"`
 	ReleaseYear int                   `form:"release_year"`
-	File        *multipart.FileHeader `form:"file" binding:"required"` // file mp3
+	File        *multipart.FileHeader `form:"file" binding:"required"`
 }
+
 type UpdateTrackRequest struct {
 	Title       string `json:"title" binding:"required"`
 	Artist      string `json:"artist" binding:"required"`
@@ -30,10 +33,14 @@ type UpdateTrackRequest struct {
 
 type TrackHandler struct {
 	service services.ITrackService
+	mongodb *mongo.Database
 }
 
-func NewTrackHandler(service services.ITrackService) *TrackHandler {
-	return &TrackHandler{service: service}
+func NewTrackHandler(service services.ITrackService, mongodb *mongo.Database) *TrackHandler {
+	return &TrackHandler{
+		service: service,
+		mongodb: mongodb,
+	}
 }
 
 // GET /tracks
@@ -47,7 +54,11 @@ func (h *TrackHandler) GetTracks(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"page": page, "limit": limit, "data": tracks})
+	c.JSON(http.StatusOK, gin.H{
+		"page":  page,
+		"limit": limit,
+		"data":  tracks,
+	})
 }
 
 // GET /tracks/:id
@@ -73,14 +84,14 @@ func (h *TrackHandler) CreateTrack(c *gin.Context) {
 
 	// 2. check file type
 	if !strings.HasSuffix(strings.ToLower(req.File.Filename), ".mp3") {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "only mp3 files are allowed"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "only mp3 files allowed"})
 		return
 	}
 
 	// 3. Open file
 	file, err := req.File.Open()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot open file"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to open file"})
 		return
 	}
 	defer file.Close()
@@ -88,7 +99,7 @@ func (h *TrackHandler) CreateTrack(c *gin.Context) {
 	// 4. Upload file to GridFS
 	gridFSID, err := h.service.UploadMP3ToGridFS(req.File.Filename, file)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to upload to GridFS"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "upload to GridFS failed"})
 		return
 	}
 
@@ -96,14 +107,11 @@ func (h *TrackHandler) CreateTrack(c *gin.Context) {
 	file.Seek(0, 0)
 	decoder, err := mp3.NewDecoder(file)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot decode mp3"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to decode mp3"})
 		return
 	}
 
-	const bytesPerSample = 2
-	const channels = 2
-	totalSamples := float64(decoder.Length()) / (bytesPerSample * channels)
-	durationSeconds := totalSamples / float64(decoder.SampleRate())
+	durationSeconds := (float64(decoder.Length()) / 4) / float64(decoder.SampleRate())
 	duration := int(durationSeconds)
 
 	// 6. Create track object
@@ -169,6 +177,7 @@ func (h *TrackHandler) UpdateTrack(c *gin.Context) {
 // DELETE /tracks/:id
 func (h *TrackHandler) DeleteTrack(c *gin.Context) {
 	id := c.Param("id")
+
 	track, err := h.service.GetTrackByID(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "track not found"})
@@ -180,7 +189,7 @@ func (h *TrackHandler) DeleteTrack(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusNoContent, nil)
+	c.Status(http.StatusNoContent)
 }
 
 // GET /tracks/search
@@ -196,4 +205,56 @@ func (h *TrackHandler) SearchTracks(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"page": page, "limit": limit, "data": tracks})
+}
+
+// GET /tracks/stream/:id
+func (h *TrackHandler) StreamTrack(c *gin.Context) {
+	id := c.Param("id")
+
+	track, err := h.service.GetTrackByID(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "track not found"})
+		return
+	}
+
+	rangeHeader := c.GetHeader("Range")
+
+	stream, err := h.service.OpenTrackStream(track.FileID, rangeHeader)
+	if err != nil {
+		c.JSON(http.StatusRequestedRangeNotSatisfiable, gin.H{"error": err.Error()})
+		return
+	}
+	defer stream.Reader.Close()
+
+	// --- RESPONSE HEADERS ---
+	c.Header("Content-Type", "audio/mpeg")
+	c.Header("Accept-Ranges", "bytes")
+	c.Header("Content-Disposition", "inline; filename=\""+track.Title+"\"")
+	c.Header("Content-Range", stream.ContentRange)
+	c.Status(http.StatusPartialContent)
+
+	// Compute the number of bytes to copy
+	toCopy := (stream.End - stream.Start) + 1
+
+	buf := make([]byte, 32*1024)
+	var copied int64 = 0
+
+	for copied < toCopy {
+		n, err := stream.Reader.Read(buf)
+		if n > 0 {
+			remain := toCopy - copied
+			if int64(n) > remain {
+				n = int(remain)
+			}
+			c.Writer.Write(buf[:n])
+			c.Writer.Flush()
+			copied += int64(n)
+		}
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			break
+		}
+	}
 }
