@@ -1,0 +1,13 @@
+# Chọn Golang Alpine nhẹ
+FROM golang:1.25-alpine
+
+WORKDIR /music_api
+
+RUN apk add --no-cache bash git curl
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+EXPOSE 8080
+
+# CMD ["tail", "-f", "/dev/null"]

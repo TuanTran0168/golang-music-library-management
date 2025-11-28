@@ -1,0 +1,76 @@
+version: "3.9"
+
+services:
+  mongo_db:
+    image: mongo:7.0
+    container_name: music_mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: Admin@123
+      MONGO_INITDB_DATABASE: music_library
+    ports:
+      - "27027:27017"  # host:container
+    volumes:
+      - mongo_data:/data/db
+      - mongo_dump:/dump
+    networks:
+      - music_network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.local
+    image: music_app:dev
+    container_name: music_api_dev
+    command: ["tail", "-f", "/dev/null"]
+    volumes:
+      - .:/music_api
+      - go_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+      - ./uploads:/music_api/uploads
+    working_dir: /music_api
+    ports:
+      - "8080:8080"  # host:container
+    depends_on:
+      - mongo_db
+    networks:
+      - music_network
+
+volumes:
+  mongo_data:
+  mongo_dump:
+  go_mod_cache:
+  go_build_cache:
+
+networks:
+  music_network:
+    driver: bridge
+
+
+# Quá nặng, quá khủng khiếp :D
+# volumes:
+#   mongo_data:
+#     driver: local
+#     driver_opts:
+#       type: none
+#       o: bind
+#       device: ./docker/mongo_data
+#   mongo_dump:
+#     driver: local
+#     driver_opts:
+#       type: none
+#       o: bind
+#       device: ./docker/mongo_dump
+#   go_mod_cache:
+#     driver: local
+#     driver_opts:
+#       type: none
+#       o: bind
+#       device: ./docker/go_mod_cache
+#   go_build_cache:
+#     driver: local
+#     driver_opts:
+#       type: none
+#       o: bind
+#       device: ./docker/go_build_cache
