@@ -3,10 +3,8 @@ package handlers
 import (
 	"mime/multipart"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"music-library-api/internal/models"
 	"music-library-api/internal/services"
@@ -28,8 +26,6 @@ type UpdateTrackRequest struct {
 	Album       string `json:"album"`
 	Genre       string `json:"genre"`
 	ReleaseYear int    `json:"release_year"`
-	Duration    int    `json:"duration"`
-	MP3URL      string `json:"mp3_url"`
 }
 
 type TrackHandler struct {
@@ -69,64 +65,59 @@ func (h *TrackHandler) GetTrackByID(c *gin.Context) {
 func (h *TrackHandler) CreateTrack(c *gin.Context) {
 	var req TrackCreateRequest
 
-	// Bind multipart/form-data
+	// 1. Bind multipart/form-data
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// check file type
+	// 2. check file type
 	if !strings.HasSuffix(strings.ToLower(req.File.Filename), ".mp3") {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "only mp3 files are allowed"})
 		return
 	}
 
-	// 1. save file
-	dst := "uploads/" + req.File.Filename
-	if err := c.SaveUploadedFile(req.File, dst); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
-		return
-	}
-
-	// 2. open file
-	f, err := os.Open(dst)
+	// 3. Open file
+	file, err := req.File.Open()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot open file"})
 		return
 	}
-	defer f.Close()
+	defer file.Close()
 
-	// 3. decode mp3 to get duration
-	decoder, err := mp3.NewDecoder(f)
+	// 4. Upload file to GridFS
+	gridFSID, err := h.service.UploadMP3ToGridFS(req.File.Filename, file)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to upload to GridFS"})
+		return
+	}
+
+	// 5. Reset file reader and decode mp3 to get duration
+	file.Seek(0, 0)
+	decoder, err := mp3.NewDecoder(file)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot decode mp3"})
 		return
 	}
 
-	// go-mp3 decodes to 16-bit (2 bytes) stereo (2 channels).
-	// Therefore, each sample uses 4 bytes (2 bytes/sample * 2 channels).
-	// Total Samples = decoder.Length() / 4
-	// Duration (seconds) = Total Samples / Sample Rate
+	const bytesPerSample = 2
+	const channels = 2
+	totalSamples := float64(decoder.Length()) / (bytesPerSample * channels)
+	durationSeconds := totalSamples / float64(decoder.SampleRate())
+	duration := int(durationSeconds)
 
-	totalBytes := float64(decoder.Length())
-	sampleRate := float64(decoder.SampleRate())
-
-	durationSeconds := (totalBytes / 4.0) / sampleRate
-
-	duration := time.Duration(durationSeconds * float64(time.Second))
-
-	// 4. track object
+	// 6. Create track object
 	track := &models.Track{
 		Title:       req.File.Filename,
 		Artist:      req.Artist,
 		Album:       req.Album,
 		Genre:       req.Genre,
-		Duration:    int(duration.Seconds()),
-		URL:         dst,
 		ReleaseYear: req.ReleaseYear,
+		Duration:    duration,
+		FileID:      gridFSID,
 	}
 
-	// 5. save track to DB
+	// 7. Save track
 	if err := h.service.CreateTrack(track); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save track"})
 		return
@@ -165,12 +156,6 @@ func (h *TrackHandler) UpdateTrack(c *gin.Context) {
 	}
 	if req.ReleaseYear != 0 {
 		track.ReleaseYear = req.ReleaseYear
-	}
-	if req.Duration != 0 {
-		track.Duration = req.Duration
-	}
-	if req.MP3URL != "" {
-		track.URL = req.MP3URL
 	}
 
 	if err := h.service.UpdateTrack(track); err != nil {
