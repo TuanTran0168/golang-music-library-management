@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"fmt"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -11,6 +13,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/hajimehoshi/go-mp3"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
 
 type TrackCreateRequest struct {
@@ -30,10 +34,14 @@ type UpdateTrackRequest struct {
 
 type TrackHandler struct {
 	service services.ITrackService
+	mongodb *mongo.Database
 }
 
-func NewTrackHandler(service services.ITrackService) *TrackHandler {
-	return &TrackHandler{service: service}
+func NewTrackHandler(service services.ITrackService, mongodb *mongo.Database) *TrackHandler {
+	return &TrackHandler{
+		service: service,
+		mongodb: mongodb,
+	}
 }
 
 // GET /tracks
@@ -196,4 +204,87 @@ func (h *TrackHandler) SearchTracks(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"page": page, "limit": limit, "data": tracks})
+}
+
+// GET /tracks/stream/:id
+func (h *TrackHandler) StreamTrack(c *gin.Context) {
+	idStr := c.Param("id")
+
+	track, err := h.service.GetTrackByID(idStr)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "track not found"})
+		return
+	}
+
+	fileID := track.FileID // primitive.ObjectID
+
+	bucket, err := gridfs.NewBucket(h.mongodb)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create GridFS bucket"})
+		return
+	}
+
+	// Kiểm tra Range header (nếu client muốn seek)
+	rangeHeader := c.GetHeader("Range")
+	fmt.Println("rangeHeader: ", rangeHeader)
+	var start, end int64 = 0, -1
+	if rangeHeader != "" && strings.HasPrefix(rangeHeader, "bytes=") {
+		parts := strings.Split(strings.TrimPrefix(rangeHeader, "bytes="), "-")
+		start, _ = strconv.ParseInt(parts[0], 10, 64)
+		if len(parts) > 1 && parts[1] != "" {
+			end, _ = strconv.ParseInt(parts[1], 10, 64)
+		}
+		c.Status(http.StatusPartialContent)
+		c.Header("Content-Range", fmt.Sprintf("bytes %d-%d/*", start, end))
+	}
+
+	reader, err := bucket.OpenDownloadStream(fileID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot open GridFS stream"})
+		return
+	}
+	defer reader.Close()
+
+	// Skip tới byte start
+	if start > 0 {
+		if _, err := io.CopyN(io.Discard, reader, start); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to skip bytes"})
+			return
+		}
+	}
+
+	c.Header("Content-Type", "audio/mpeg")
+	c.Header("Accept-Ranges", "bytes")
+	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", track.Title))
+
+	var toCopy int64 = end - start + 1
+	if end == -1 {
+		toCopy = -1 // copy toàn bộ
+	}
+
+	if toCopy > 0 {
+		// copy một phần
+		buf := make([]byte, 1024*32)
+		var copied int64 = 0
+		for {
+			if copied >= toCopy {
+				break
+			}
+			n, err := reader.Read(buf)
+			if n > 0 {
+				remaining := toCopy - copied
+				if int64(n) > remaining {
+					n = int(remaining)
+				}
+				c.Writer.Write(buf[:n])
+				copied += int64(n)
+			}
+			if err != nil {
+				break
+			}
+		}
+	} else {
+		// copy toàn bộ
+		io.Copy(c.Writer, reader)
+	}
 }

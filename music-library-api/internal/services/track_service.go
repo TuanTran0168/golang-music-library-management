@@ -5,8 +5,8 @@ import (
 	"music-library-api/internal/models"
 	"music-library-api/internal/repositories"
 
-	"github.com/kamva/mgm/v3"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
 
@@ -21,12 +21,14 @@ type ITrackService interface {
 }
 
 type TrackService struct {
-	repo repositories.ITrackRepository
+	repo    repositories.ITrackRepository
+	mongodb *mongo.Database
 }
 
-func NewTrackService(repo repositories.ITrackRepository) ITrackService {
+func NewTrackService(repo repositories.ITrackRepository, mongodb *mongo.Database) ITrackService {
 	return &TrackService{
-		repo: repo,
+		repo:    repo,
+		mongodb: mongodb,
 	}
 }
 
@@ -55,12 +57,8 @@ func (s *TrackService) SearchTracks(query string, page, limit int) ([]*models.Tr
 }
 
 func (s *TrackService) UploadMP3ToGridFS(filename string, r io.Reader) (primitive.ObjectID, error) {
-	_, _, db, err := mgm.DefaultConfigs()
-	if err != nil {
-		return primitive.NilObjectID, err
-	}
 
-	bucket, err := gridfs.NewBucket(db)
+	bucket, err := gridfs.NewBucket(s.mongodb)
 	if err != nil {
 		return primitive.NilObjectID, err
 	}
