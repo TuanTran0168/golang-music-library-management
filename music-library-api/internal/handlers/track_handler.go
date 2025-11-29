@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"io"
-	"mime/multipart"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"music-library-api/internal/dto"
+	"music-library-api/internal/mappers"
 	"music-library-api/internal/models"
 	"music-library-api/internal/services"
 
@@ -14,22 +15,6 @@ import (
 	"github.com/hajimehoshi/go-mp3"
 	"go.mongodb.org/mongo-driver/mongo"
 )
-
-type TrackCreateRequest struct {
-	Artist      string                `form:"artist" binding:"required"`
-	Album       string                `form:"album"`
-	Genre       string                `form:"genre"`
-	ReleaseYear int                   `form:"release_year"`
-	File        *multipart.FileHeader `form:"file" binding:"required"`
-}
-
-type UpdateTrackRequest struct {
-	Title       string `json:"title" binding:"required"`
-	Artist      string `json:"artist" binding:"required"`
-	Album       string `json:"album"`
-	Genre       string `json:"genre"`
-	ReleaseYear int    `json:"release_year"`
-}
 
 type TrackHandler struct {
 	service services.ITrackService
@@ -43,52 +28,94 @@ func NewTrackHandler(service services.ITrackService, mongodb *mongo.Database) *T
 	}
 }
 
-// GET /tracks
+// GetTracks godoc
+// @Summary      Get list of tracks
+// @Description  Retrieve a paginated list of tracks
+// @Tags         tracks
+// @Accept       json
+// @Produce      json
+// @Param        page   query     int     false  "Page number"
+// @Param        limit  query     int     false  "Page size"
+// @Success      200    {object}  dto.TrackListResponse
+// @Failure      500    {object}  map[string]string
+// @Router       /tracks [get]
 func (h *TrackHandler) GetTracks(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	tracks, err := h.service.GetTracks(page, limit)
+	list, err := h.service.GetTracks(page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"page":  page,
-		"limit": limit,
-		"data":  tracks,
+	resp := make([]dto.TrackResponse, 0)
+	for _, t := range list {
+		resp = append(resp, mappers.ToTrackResponse(t))
+	}
+
+	c.JSON(http.StatusOK, dto.TrackListResponse{
+		Page:  page,
+		Limit: limit,
+		Data:  resp,
 	})
 }
 
+//
+// ----------------------------
 // GET /tracks/:id
+// ----------------------------
+//
+
+// GetTrackByID godoc
+// @Summary      Get track by ID
+// @Description  Retrieve a single track by its ID
+// @Tags         tracks
+// @Produce      json
+// @Param        id     path      string  true  "Track ID"
+// @Success      200    {object}  dto.TrackResponse
+// @Failure      404    {object}  map[string]string
+// @Router       /tracks/{id} [get]
 func (h *TrackHandler) GetTrackByID(c *gin.Context) {
 	id := c.Param("id")
+
 	track, err := h.service.GetTrackByID(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "track not found"})
 		return
 	}
-	c.JSON(http.StatusOK, track)
+
+	c.JSON(http.StatusOK, mappers.ToTrackResponse(track))
 }
 
-// POST /tracks
+// CreateTrack godoc
+// @Summary      Upload a new track
+// @Description  Upload a new MP3 track and save metadata
+// @Tags         tracks
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param        artist       formData  string  true  "Artist"
+// @Param        album        formData  string  false "Album"
+// @Param        genre        formData  string  false "Genre"
+// @Param        release_year formData  int     false "Release Year"
+// @Param        file         formData  file    true  "MP3 File"
+// @Success      201    {object} dto.TrackResponse
+// @Failure      400    {object} map[string]string
+// @Failure      500    {object} map[string]string
+// @Router       /tracks [post]
 func (h *TrackHandler) CreateTrack(c *gin.Context) {
-	var req TrackCreateRequest
+	var req dto.TrackCreateRequest
 
-	// 1. Bind multipart/form-data
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// 2. check file type
 	if !strings.HasSuffix(strings.ToLower(req.File.Filename), ".mp3") {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "only mp3 files allowed"})
 		return
 	}
 
-	// 3. Open file
 	file, err := req.File.Open()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to open file"})
@@ -96,14 +123,12 @@ func (h *TrackHandler) CreateTrack(c *gin.Context) {
 	}
 	defer file.Close()
 
-	// 4. Upload file to GridFS
 	gridFSID, err := h.service.UploadMP3ToGridFS(req.File.Filename, file)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "upload to GridFS failed"})
 		return
 	}
 
-	// 5. Reset file reader and decode mp3 to get duration
 	file.Seek(0, 0)
 	decoder, err := mp3.NewDecoder(file)
 	if err != nil {
@@ -111,10 +136,8 @@ func (h *TrackHandler) CreateTrack(c *gin.Context) {
 		return
 	}
 
-	durationSeconds := (float64(decoder.Length()) / 4) / float64(decoder.SampleRate())
-	duration := int(durationSeconds)
+	duration := int(float64(decoder.Length()/4) / float64(decoder.SampleRate()))
 
-	// 6. Create track object
 	track := &models.Track{
 		Title:       req.File.Filename,
 		Artist:      req.Artist,
@@ -125,16 +148,27 @@ func (h *TrackHandler) CreateTrack(c *gin.Context) {
 		FileID:      gridFSID,
 	}
 
-	// 7. Save track
 	if err := h.service.CreateTrack(track); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save track"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, track)
+	c.JSON(http.StatusCreated, mappers.ToTrackResponse(track))
 }
 
-// PATCH /tracks/:id
+// UpdateTrack godoc
+// @Summary      Update a track
+// @Description  Update track metadata by ID
+// @Tags         tracks
+// @Accept       json
+// @Produce      json
+// @Param        id     path      string               true  "Track ID"
+// @Param        track  body      dto.UpdateTrackRequest   true  "Track update info"
+// @Success      200    {object}  dto.TrackResponse
+// @Failure      400    {object}  map[string]string
+// @Failure      404    {object}  map[string]string
+// @Failure      500    {object}  map[string]string
+// @Router       /tracks/{id} [patch]
 func (h *TrackHandler) UpdateTrack(c *gin.Context) {
 	id := c.Param("id")
 
@@ -144,24 +178,16 @@ func (h *TrackHandler) UpdateTrack(c *gin.Context) {
 		return
 	}
 
-	var req UpdateTrackRequest
+	var req dto.UpdateTrackRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if req.Title != "" {
-		track.Title = req.Title
-	}
-	if req.Artist != "" {
-		track.Artist = req.Artist
-	}
-	if req.Album != "" {
-		track.Album = req.Album
-	}
-	if req.Genre != "" {
-		track.Genre = req.Genre
-	}
+	track.Title = req.Title
+	track.Artist = req.Artist
+	track.Album = req.Album
+	track.Genre = req.Genre
 	if req.ReleaseYear != 0 {
 		track.ReleaseYear = req.ReleaseYear
 	}
@@ -171,10 +197,18 @@ func (h *TrackHandler) UpdateTrack(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, track)
+	c.JSON(http.StatusOK, mappers.ToTrackResponse(track))
 }
 
-// DELETE /tracks/:id
+// DeleteTrack godoc
+// @Summary      Delete a track
+// @Description  Delete a track by ID
+// @Tags         tracks
+// @Param        id     path      string  true  "Track ID"
+// @Success      204    "No Content"
+// @Failure      404    {object}  map[string]string
+// @Failure      500    {object}  map[string]string
+// @Router       /tracks/{id} [delete]
 func (h *TrackHandler) DeleteTrack(c *gin.Context) {
 	id := c.Param("id")
 
@@ -192,22 +226,50 @@ func (h *TrackHandler) DeleteTrack(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// GET /tracks/search
+// SearchTracks godoc
+// @Summary      Search tracks
+// @Description  Search tracks by query string
+// @Tags         tracks
+// @Produce      json
+// @Param        q      query     string true  "Search query"
+// @Param        page   query     int    false "Page number"
+// @Param        limit  query     int    false "Page size"
+// @Success      200    {object}  dto.TrackListResponse
+// @Failure      500    {object} map[string]string
+// @Router       /tracks/search [get]
 func (h *TrackHandler) SearchTracks(c *gin.Context) {
 	query := c.Query("q")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	tracks, err := h.service.SearchTracks(query, page, limit)
+	list, err := h.service.SearchTracks(query, page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"page": page, "limit": limit, "data": tracks})
+	resp := make([]dto.TrackResponse, 0)
+	for _, t := range list {
+		resp = append(resp, mappers.ToTrackResponse(t))
+	}
+
+	c.JSON(http.StatusOK, dto.TrackListResponse{
+		Page:  page,
+		Limit: limit,
+		Data:  resp,
+	})
 }
 
-// GET /tracks/stream/:id
+// StreamTrack godoc
+// @Summary Stream an audio track
+// @Description Stream MP3 file, support Range header
+// @Tags tracks
+// @Produce audio/mpeg
+// @Param id path string true "Track ID"
+// @Header 206 {string} Content-Range "Bytes range of the content"
+// @Header 206 {string} Content-Type "audio/mpeg"
+// @Failure 404 {object} map[string]string
+// @Router /tracks/stream/{id} [get]
 func (h *TrackHandler) StreamTrack(c *gin.Context) {
 	id := c.Param("id")
 
@@ -226,18 +288,15 @@ func (h *TrackHandler) StreamTrack(c *gin.Context) {
 	}
 	defer stream.Reader.Close()
 
-	// --- RESPONSE HEADERS ---
 	c.Header("Content-Type", "audio/mpeg")
 	c.Header("Accept-Ranges", "bytes")
 	c.Header("Content-Disposition", "inline; filename=\""+track.Title+"\"")
 	c.Header("Content-Range", stream.ContentRange)
 	c.Status(http.StatusPartialContent)
 
-	// Compute the number of bytes to copy
 	toCopy := (stream.End - stream.Start) + 1
-
 	buf := make([]byte, 32*1024)
-	var copied int64 = 0
+	var copied int64
 
 	for copied < toCopy {
 		n, err := stream.Reader.Read(buf)
@@ -250,6 +309,7 @@ func (h *TrackHandler) StreamTrack(c *gin.Context) {
 			c.Writer.Flush()
 			copied += int64(n)
 		}
+
 		if err != nil {
 			if err == io.EOF {
 				break

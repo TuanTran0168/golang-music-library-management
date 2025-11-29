@@ -1,0 +1,492 @@
+basePath: /api
+definitions:
+  dto.CreatePlaylistRequest:
+    properties:
+      album_cover:
+        type: string
+      title:
+        type: string
+      track_ids:
+        items:
+          type: string
+        type: array
+    required:
+    - title
+    type: object
+  dto.PlaylistResponse:
+    properties:
+      album_cover:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      title:
+        type: string
+      track_ids:
+        items:
+          type: string
+        type: array
+      updated_at:
+        type: string
+    type: object
+  dto.TrackListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.TrackResponse'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+    type: object
+  dto.TrackResponse:
+    properties:
+      album:
+        type: string
+      artist:
+        type: string
+      created_at:
+        type: string
+      duration:
+        type: integer
+      file_id:
+        type: string
+      genre:
+        type: string
+      id:
+        type: string
+      playlist_id:
+        type: string
+      release_year:
+        type: integer
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.UpdatePlaylistRequest:
+    properties:
+      album_cover:
+        type: string
+      title:
+        type: string
+      track_ids:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.UpdateTrackRequest:
+    properties:
+      album:
+        type: string
+      artist:
+        type: string
+      genre:
+        type: string
+      release_year:
+        type: integer
+      title:
+        type: string
+    required:
+    - artist
+    - title
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: A simple RESTful Music Library API built with Golang and MongoDB
+  title: Music Library API
+  version: "1.0"
+paths:
+  /playlists:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve paginated playlists
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get all playlists
+      tags:
+      - Playlists
+    post:
+      consumes:
+      - application/json
+      description: Create new playlist
+      parameters:
+      - description: Playlist data
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreatePlaylistRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.PlaylistResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create playlist
+      tags:
+      - Playlists
+  /playlists/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove playlist by ID
+      parameters:
+      - description: Playlist ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete playlist
+      tags:
+      - Playlists
+    get:
+      consumes:
+      - application/json
+      description: Get playlist detail
+      parameters:
+      - description: Playlist ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PlaylistResponse'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get playlist by ID
+      tags:
+      - Playlists
+    patch:
+      consumes:
+      - application/json
+      description: Update playlist by ID
+      parameters:
+      - description: Playlist ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Playlist update
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePlaylistRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PlaylistResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update playlist
+      tags:
+      - Playlists
+  /tracks:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a paginated list of tracks
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TrackListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get list of tracks
+      tags:
+      - tracks
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a new MP3 track and save metadata
+      parameters:
+      - description: Artist
+        in: formData
+        name: artist
+        required: true
+        type: string
+      - description: Album
+        in: formData
+        name: album
+        type: string
+      - description: Genre
+        in: formData
+        name: genre
+        type: string
+      - description: Release Year
+        in: formData
+        name: release_year
+        type: integer
+      - description: MP3 File
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.TrackResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Upload a new track
+      tags:
+      - tracks
+  /tracks/{id}:
+    delete:
+      description: Delete a track by ID
+      parameters:
+      - description: Track ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a track
+      tags:
+      - tracks
+    get:
+      description: Retrieve a single track by its ID
+      parameters:
+      - description: Track ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TrackResponse'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get track by ID
+      tags:
+      - tracks
+    patch:
+      consumes:
+      - application/json
+      description: Update track metadata by ID
+      parameters:
+      - description: Track ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Track update info
+        in: body
+        name: track
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateTrackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TrackResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a track
+      tags:
+      - tracks
+  /tracks/search:
+    get:
+      description: Search tracks by query string
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TrackListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Search tracks
+      tags:
+      - tracks
+  /tracks/stream/{id}:
+    get:
+      description: Stream MP3 file, support Range header
+      parameters:
+      - description: Track ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - audio/mpeg
+      responses:
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Stream an audio track
+      tags:
+      - tracks
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer {your token}" to authenticate.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
