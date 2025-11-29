@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -10,9 +11,11 @@ import (
 	"music-library-api/internal/mappers"
 	"music-library-api/internal/models"
 	"music-library-api/internal/services"
+	"music-library-api/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hajimehoshi/go-mp3"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -47,6 +50,11 @@ func (h *TrackHandler) GetTracks(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// show track info
+	for _, t := range list {
+		fmt.Println(t.PlaylistIDs)
 	}
 
 	resp := make([]dto.TrackResponse, 0)
@@ -99,13 +107,13 @@ func (h *TrackHandler) GetTrackByID(c *gin.Context) {
 // @Param        genre        formData  string  false "Genre"
 // @Param        release_year formData  int     false "Release Year"
 // @Param        file         formData  file    true  "MP3 File"
+// @Param        playlist_ids formData  array  false "Playlist IDs"
 // @Success      201    {object} dto.TrackResponse
 // @Failure      400    {object} map[string]string
 // @Failure      500    {object} map[string]string
 // @Router       /tracks [post]
 func (h *TrackHandler) CreateTrack(c *gin.Context) {
 	var req dto.TrackCreateRequest
-
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -135,8 +143,17 @@ func (h *TrackHandler) CreateTrack(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to decode mp3"})
 		return
 	}
-
 	duration := int(float64(decoder.Length()/4) / float64(decoder.SampleRate()))
+
+	var playlistIDs []primitive.ObjectID
+	if len(req.PlaylistIDs) > 0 {
+		ids := strings.Split(req.PlaylistIDs[0], ",")
+		playlistIDs, err = utils.ConvertToObjectIDs(ids)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid playlist IDs"})
+			return
+		}
+	}
 
 	track := &models.Track{
 		Title:       req.File.Filename,
@@ -146,6 +163,7 @@ func (h *TrackHandler) CreateTrack(c *gin.Context) {
 		ReleaseYear: req.ReleaseYear,
 		Duration:    duration,
 		FileID:      gridFSID,
+		PlaylistIDs: playlistIDs,
 	}
 
 	if err := h.service.CreateTrack(track); err != nil {

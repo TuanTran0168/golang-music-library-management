@@ -57,8 +57,10 @@ definitions:
         type: string
       id:
         type: string
-      playlist_id:
-        type: string
+      playlist_ids:
+        items:
+          type: string
+        type: array
       release_year:
         type: integer
       title:
@@ -312,6 +314,10 @@ paths:
         name: file
         required: true
         type: file
+      - description: Playlist IDs
+        in: formData
+        name: playlist_ids
+        type: array
       produces:
       - application/json
       responses:

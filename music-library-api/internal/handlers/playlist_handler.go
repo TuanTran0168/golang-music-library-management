@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -40,10 +41,14 @@ func (h *PlaylistHandler) GetPlaylists(c *gin.Context) {
 		return
 	}
 
+	// show playlist info
+	for _, p := range playlists {
+		fmt.Println(p.TrackIDs)
+	}
+
 	resp := make([]dto.PlaylistResponse, len(playlists))
 	for i, p := range playlists {
 		resp[i] = mappers.ToPlaylistResponse(p)
-		mappers.ToPlaylistResponse(p)
 	}
 
 	c.JSON(http.StatusOK, gin.H{

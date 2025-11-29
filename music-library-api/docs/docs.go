@@ -338,6 +338,12 @@ const docTemplate = `{
                         "name": "file",
                         "in": "formData",
                         "required": true
+                    },
+                    {
+                        "type": "array",
+                        "description": "Playlist IDs",
+                        "name": "playlist_ids",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -682,8 +688,11 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "playlist_id": {
-                    "type": "string"
+                "playlist_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "release_year": {
                     "type": "integer"

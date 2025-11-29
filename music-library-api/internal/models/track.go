@@ -6,14 +6,14 @@ import (
 )
 
 type Track struct {
-	mgm.DefaultModel `bson:",inline"`   // ID, CreatedAt, UpdatedAt
-	Title            string             `bson:"title" json:"title"`
-	Artist           string             `bson:"artist" json:"artist"`
-	Album            string             `bson:"album" json:"album"`
-	Genre            string             `bson:"genre" json:"genre"`
-	ReleaseYear      int                `bson:"release_year" json:"release_year"`
-	Duration         int                `bson:"duration" json:"duration"` // in seconds
-	URL              string             `bson:"url" json:"url"`           // mp3 URL
-	FileID           primitive.ObjectID `bson:"file_id" json:"file_id"`
-	PlaylistID       primitive.ObjectID `bson:"playlist_id,omitempty" json:"playlist_id"`
+	mgm.DefaultModel `bson:",inline"`     // ID, CreatedAt, UpdatedAt
+	Title            string               `bson:"title" json:"title"`
+	Artist           string               `bson:"artist" json:"artist"`
+	Album            string               `bson:"album" json:"album"`
+	Genre            string               `bson:"genre" json:"genre"`
+	ReleaseYear      int                  `bson:"release_year" json:"release_year"`
+	Duration         int                  `bson:"duration" json:"duration"` // in seconds
+	URL              string               `bson:"url" json:"url"`           // mp3 URL
+	FileID           primitive.ObjectID   `bson:"file_id" json:"file_id"`
+	PlaylistIDs      []primitive.ObjectID `bson:"playlist_ids,omitempty" json:"playlist_ids"`
 }

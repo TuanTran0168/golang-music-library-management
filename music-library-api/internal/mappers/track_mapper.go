@@ -6,6 +6,11 @@ import (
 )
 
 func ToTrackResponse(m *models.Track) dto.TrackResponse {
+	playlistIDs := make([]string, len(m.PlaylistIDs))
+	for i, id := range m.PlaylistIDs {
+		playlistIDs[i] = id.Hex()
+	}
+
 	return dto.TrackResponse{
 		ID:          m.ID.Hex(),
 		CreatedAt:   m.CreatedAt,
@@ -17,6 +22,6 @@ func ToTrackResponse(m *models.Track) dto.TrackResponse {
 		ReleaseYear: m.ReleaseYear,
 		Duration:    m.Duration,
 		FileID:      m.FileID.Hex(),
-		PlaylistID:  m.PlaylistID.Hex(),
+		PlaylistIDs: playlistIDs,
 	}
 }

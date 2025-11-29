@@ -11,6 +11,7 @@ type TrackCreateRequest struct {
 	Genre       string                `form:"genre"`
 	ReleaseYear int                   `form:"release_year"`
 	File        *multipart.FileHeader `form:"file" binding:"required"`
+	PlaylistIDs []string              `form:"playlist_ids"`
 }
 
 type UpdateTrackRequest struct {
@@ -26,14 +27,14 @@ type TrackResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 
-	Title       string `json:"title"`
-	Artist      string `json:"artist"`
-	Album       string `json:"album"`
-	Genre       string `json:"genre"`
-	ReleaseYear int    `json:"release_year"`
-	Duration    int    `json:"duration"`
-	FileID      string `json:"file_id"`
-	PlaylistID  string `json:"playlist_id"`
+	Title       string   `json:"title"`
+	Artist      string   `json:"artist"`
+	Album       string   `json:"album"`
+	Genre       string   `json:"genre"`
+	ReleaseYear int      `json:"release_year"`
+	Duration    int      `json:"duration"`
+	FileID      string   `json:"file_id"`
+	PlaylistIDs []string `json:"playlist_ids"`
 }
 
 type TrackListResponse struct {
