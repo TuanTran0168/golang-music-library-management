@@ -10,10 +10,23 @@ import (
 	"music-library-api/internal/services"
 	database "music-library-api/pkg/databases"
 
+	_ "music-library-api/docs"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kamva/mgm/v3"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// @title Music Library API
+// @version 1.0
+// @description A simple RESTful Music Library API built with Golang and MongoDB
+// @host localhost:8080
+// @BasePath /api
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer {your token}" to authenticate.
 func main() {
 	// 1. Load config
 	cfg := configs.LoadConfig()
@@ -37,12 +50,15 @@ func main() {
 	// 6. Initialize router
 	server := router.NewRouter(trackHandler, playlistHandler)
 
-	// 7. Health check
+	// 7. Swagger
+	server.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	// 8. Health check
 	server.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Hello Music Library API!"})
 	})
 
-	// 8. Start server
+	// 9. Start server
 	port := cfg.HTTPPort
 	log.Printf("Server running at :%s", port)
 	if err := server.Run(":" + port); err != nil {

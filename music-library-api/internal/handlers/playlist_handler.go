@@ -4,11 +4,13 @@ import (
 	"net/http"
 	"strconv"
 
+	"music-library-api/internal/dto"
+	"music-library-api/internal/mappers"
 	"music-library-api/internal/models"
 	"music-library-api/internal/services"
+	"music-library-api/pkg/utils"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type PlaylistHandler struct {
@@ -19,32 +21,15 @@ func NewPlaylistHandler(service services.IPlaylistService) *PlaylistHandler {
 	return &PlaylistHandler{service: service}
 }
 
-type CreatePlaylistRequest struct {
-	Title      string   `json:"title" binding:"required"`
-	AlbumCover string   `json:"album_cover"`
-	TrackIDs   []string `json:"track_ids"`
-}
-
-type UpdatePlaylistRequest struct {
-	Title      string   `json:"title"`
-	AlbumCover string   `json:"album_cover"`
-	TrackIDs   []string `json:"track_ids"`
-}
-
-// Helper: convert []string -> []primitive.ObjectID
-func convertToObjectIDs(ids []string) ([]primitive.ObjectID, error) {
-	objs := make([]primitive.ObjectID, len(ids))
-	for i, idStr := range ids {
-		objID, err := primitive.ObjectIDFromHex(idStr)
-		if err != nil {
-			return nil, err
-		}
-		objs[i] = objID
-	}
-	return objs, nil
-}
-
-// GET /playlists
+// @Summary      Get all playlists
+// @Description  Retrieve paginated playlists
+// @Tags         Playlists
+// @Accept       json
+// @Produce      json
+// @Param        page  query int false "Page number"
+// @Param        limit query int false "Page size"
+// @Success      200 {object} map[string]interface{}
+// @Router       /playlists [get]
 func (h *PlaylistHandler) GetPlaylists(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
@@ -55,18 +40,37 @@ func (h *PlaylistHandler) GetPlaylists(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"page": page, "limit": limit, "data": playlists})
+	resp := make([]dto.PlaylistResponse, len(playlists))
+	for i, p := range playlists {
+		resp[i] = mappers.ToPlaylistResponse(p)
+		mappers.ToPlaylistResponse(p)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"page":  page,
+		"limit": limit,
+		"data":  resp,
+	})
 }
 
-// POST /playlists
+// @Summary      Create playlist
+// @Description  Create new playlist
+// @Tags         Playlists
+// @Accept       json
+// @Produce      json
+// @Param        payload body dto.CreatePlaylistRequest true "Playlist data"
+// @Success      201 {object} dto.PlaylistResponse
+// @Failure      400 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /playlists [post]
 func (h *PlaylistHandler) CreatePlaylist(c *gin.Context) {
-	var req CreatePlaylistRequest
+	var req dto.CreatePlaylistRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	trackIDs, err := convertToObjectIDs(req.TrackIDs)
+	trackIDs, err := utils.ConvertToObjectIDs(req.TrackIDs)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid track IDs"})
 		return
@@ -83,10 +87,18 @@ func (h *PlaylistHandler) CreatePlaylist(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, pl)
+	c.JSON(http.StatusCreated, mappers.ToPlaylistResponse(pl))
 }
 
-// GET /playlists/:id
+// @Summary      Get playlist by ID
+// @Description  Get playlist detail
+// @Tags         Playlists
+// @Accept       json
+// @Produce      json
+// @Param        id path string true "Playlist ID"
+// @Success      200 {object} dto.PlaylistResponse
+// @Failure      404 {object} map[string]string
+// @Router       /playlists/{id} [get]
 func (h *PlaylistHandler) GetPlaylistByID(c *gin.Context) {
 	idStr := c.Param("id")
 
@@ -96,14 +108,25 @@ func (h *PlaylistHandler) GetPlaylistByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, pl)
+	c.JSON(http.StatusOK, mappers.ToPlaylistResponse(pl))
 }
 
-// PATCH /playlists/:id
+// @Summary      Update playlist
+// @Description  Update playlist by ID
+// @Tags         Playlists
+// @Accept       json
+// @Produce      json
+// @Param        id path string true "Playlist ID"
+// @Param        payload body dto.UpdatePlaylistRequest true "Playlist update"
+// @Success      200 {object} dto.PlaylistResponse
+// @Failure      400 {object} map[string]string
+// @Failure      404 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /playlists/{id} [patch]
 func (h *PlaylistHandler) UpdatePlaylist(c *gin.Context) {
 	idStr := c.Param("id")
 
-	var req UpdatePlaylistRequest
+	var req dto.UpdatePlaylistRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -122,7 +145,7 @@ func (h *PlaylistHandler) UpdatePlaylist(c *gin.Context) {
 		pl.AlbumCover = req.AlbumCover
 	}
 	if len(req.TrackIDs) > 0 {
-		trackIDs, err := convertToObjectIDs(req.TrackIDs)
+		trackIDs, err := utils.ConvertToObjectIDs(req.TrackIDs)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid track IDs"})
 			return
@@ -135,10 +158,18 @@ func (h *PlaylistHandler) UpdatePlaylist(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, pl)
+	c.JSON(http.StatusOK, mappers.ToPlaylistResponse(pl))
 }
 
-// DELETE /playlists/:id
+// @Summary      Delete playlist
+// @Description  Remove playlist by ID
+// @Tags         Playlists
+// @Accept       json
+// @Produce      json
+// @Param        id path string true "Playlist ID"
+// @Success      204 {string} string "No Content"
+// @Failure      500 {object} map[string]string
+// @Router       /playlists/{id} [delete]
 func (h *PlaylistHandler) DeletePlaylist(c *gin.Context) {
 	idStr := c.Param("id")
 
@@ -147,5 +178,5 @@ func (h *PlaylistHandler) DeletePlaylist(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusNoContent, nil)
+	c.Status(http.StatusNoContent)
 }
