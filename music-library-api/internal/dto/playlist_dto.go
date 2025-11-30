@@ -1,9 +1,11 @@
 package dto
 
+import "mime/multipart"
+
 type CreatePlaylistRequest struct {
-	Title      string   `json:"title" binding:"required"`
-	AlbumCover string   `json:"album_cover"`
-	TrackIDs   []string `json:"track_ids"`
+	Title      string                `form:"title" binding:"required"`
+	AlbumCover *multipart.FileHeader `form:"album_cover"`
+	TrackIDs   []string              `form:"track_ids"`
 }
 
 type UpdatePlaylistRequest struct {
