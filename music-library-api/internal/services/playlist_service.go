@@ -8,18 +8,17 @@ import (
 	"music-library-api/internal/repositories"
 	"music-library-api/pkg/utils"
 	"strings"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type IPlaylistService interface {
 	GetPlaylistByID(id string) (*models.Playlist, error)
 	GetPlaylists(page, limit int) ([]*models.Playlist, error)
 	CreatePlaylist(playlist *models.Playlist) (*models.Playlist, error)
-	UpdatePlaylist(playlist *models.Playlist) error
+	UpdatePlaylist(playlist *models.Playlist) (*models.Playlist, error)
 	DeletePlaylist(id string) error
 	StreamPlaylistM3U(id string, trackStreamBaseURL string) (string, error)
-	CreatePlaylistFormData(playlist *dto.CreatePlaylistRequest, trackIDs []primitive.ObjectID) (*models.Playlist, error)
+	CreatePlaylistFormData(req *dto.CreatePlaylistRequest) (*models.Playlist, error)
+	UpdatePlaylistFormData(id string, req *dto.UpdatePlaylistRequest) (*models.Playlist, error)
 }
 
 type PlaylistService struct {
@@ -48,7 +47,7 @@ func (s *PlaylistService) CreatePlaylist(playlist *models.Playlist) (*models.Pla
 	return s.repo.CreatePlaylist(playlist)
 }
 
-func (s *PlaylistService) UpdatePlaylist(playlist *models.Playlist) error {
+func (s *PlaylistService) UpdatePlaylist(playlist *models.Playlist) (*models.Playlist, error) {
 	return s.repo.UpdatePlaylist(playlist)
 }
 
@@ -90,7 +89,7 @@ func (s *PlaylistService) StreamPlaylistM3U(id string, trackStreamBaseURL string
 	return m3uContent.String(), nil
 }
 
-func (s *PlaylistService) CreatePlaylistFormData(playlist *dto.CreatePlaylistRequest, trackIDs []primitive.ObjectID) (*models.Playlist, error) {
+func (s *PlaylistService) CreatePlaylistFormData(playlist *dto.CreatePlaylistRequest) (*models.Playlist, error) {
 	var albumCoverURL string
 	var err error
 
@@ -101,10 +100,20 @@ func (s *PlaylistService) CreatePlaylistFormData(playlist *dto.CreatePlaylistReq
 		}
 	}
 
+	var trackIDs []string
+	if len(playlist.TrackIDs) > 0 {
+		trackIDs = strings.Split(playlist.TrackIDs[0], ",")
+	}
+
+	objIDs, err := utils.ConvertToObjectIDs(trackIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert track IDs: %w", err)
+	}
+
 	p := &models.Playlist{
 		Title:      playlist.Title,
 		AlbumCover: albumCoverURL,
-		TrackIDs:   trackIDs,
+		TrackIDs:   objIDs,
 	}
 
 	playlistObj, err := s.repo.CreatePlaylist(p)
@@ -132,4 +141,54 @@ func (s *PlaylistService) uploadAlbumCover(fileHeader *multipart.FileHeader) (st
 	}
 
 	return url, nil
+}
+
+func (s *PlaylistService) UpdatePlaylistFormData(id string, req *dto.UpdatePlaylistRequest) (*models.Playlist, error) {
+	pl, err := s.repo.GetPlaylistByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.Title != "" {
+		pl.Title = req.Title
+	}
+
+	var albumCoverURL string
+	if req.AlbumCover != nil {
+		albumCoverURL, err = s.uploadAlbumCover(req.AlbumCover)
+		if err != nil {
+			return nil, fmt.Errorf("failed to upload album cover: %w", err)
+		}
+		pl.AlbumCover = albumCoverURL
+	}
+
+	// Convert track IDs
+	if len(req.TrackIDs) > 0 {
+		var trackIDs []string
+		if len(req.TrackIDs) == 1 && strings.Contains(req.TrackIDs[0], ",") {
+			trackIDs = strings.Split(req.TrackIDs[0], ",")
+		} else {
+			trackIDs = req.TrackIDs
+		}
+
+		objIDs, err := utils.ConvertToObjectIDs(trackIDs)
+		if err != nil {
+			return nil, fmt.Errorf("invalid track IDs: %w", err)
+		}
+
+		switch req.Mode {
+		case dto.ModeAppend:
+			pl.TrackIDs = append(pl.TrackIDs, objIDs...)
+		default: // overwrite
+			pl.TrackIDs = objIDs
+		}
+	}
+
+	// Update playlist
+	playlistObj, err := s.repo.UpdatePlaylist(pl)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update playlist: %w", err)
+	}
+
+	return playlistObj, nil
 }
