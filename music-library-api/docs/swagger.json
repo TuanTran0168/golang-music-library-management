@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "A simple RESTful Music Library API built with Golang and MongoDB",
+        "description": "Clean architecture Music Library API with Golang (Gin) + MongoDB, featuring CRUD, MP3 uploads, search, and basic MP3 streaming.",
         "title": "Music Library API",
         "contact": {},
         "version": "1.0"
@@ -78,6 +78,53 @@
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/playlists/stream/{id}.m3u": {
+            "get": {
+                "description": "Streams an M3U playlist file containing URLs to the MP3 tracks.",
+                "produces": [
+                    "audio/x-mpegurl"
+                ],
+                "tags": [
+                    "Playlists"
+                ],
+                "summary": "Stream playlist as M3U",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Playlist ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "M3U playlist content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -674,9 +721,6 @@
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
-                },
-                "playlist_id": {
                     "type": "string"
                 },
                 "release_year": {

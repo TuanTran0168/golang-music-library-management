@@ -24,6 +24,7 @@ type ITrackService interface {
 
 	// stream
 	OpenTrackStream(fileID primitive.ObjectID, rangeHeader string) (*TrackStream, error)
+	GetTracksByIDs(ids []primitive.ObjectID) ([]*models.Track, error)
 }
 
 type TrackService struct {
@@ -146,4 +147,8 @@ func (s *TrackService) OpenTrackStream(fileID primitive.ObjectID, rangeHeader st
 		TotalSize:    totalSize,
 		ContentRange: contentRange,
 	}, nil
+}
+
+func (s *TrackService) GetTracksByIDs(ids []primitive.ObjectID) ([]*models.Track, error) {
+	return s.repo.GetTracksByIDs(ids)
 }

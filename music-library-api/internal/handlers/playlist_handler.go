@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"music-library-api/internal/dto"
 	"music-library-api/internal/mappers"
@@ -179,4 +181,40 @@ func (h *PlaylistHandler) DeletePlaylist(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+// @Summary      Stream playlist as M3U
+// @Description  Streams an M3U playlist file containing URLs to the MP3 tracks.
+// @Tags         Playlists
+// @Produce      audio/x-mpegurl
+// @Param        id   path     string  true  "Playlist ID"
+// @Success      200  {string}  string  "M3U playlist content"
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /playlists/stream/{id}.m3u [get]
+func (h *PlaylistHandler) StreamPlaylistM3U(c *gin.Context) {
+	playlistID := c.Param("id")
+
+	// The base path for the single track streaming endpoint.
+	// This must match the endpoint defined in your track routes (e.g., /api/v1/tracks/stream).
+	const trackStreamBaseURL = "/api/tracks/stream"
+
+	fmt.Println("trackStreamBaseURL", trackStreamBaseURL)
+	m3uContent, err := h.service.StreamPlaylistM3U(playlistID, trackStreamBaseURL)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to generate M3U playlist: %v", err)})
+		return
+	}
+
+	// 1. Set the correct MIME type for M3U playlist files
+	c.Header("Content-Type", "audio/x-mpegurl")
+	// 2. Set Content-Disposition to attachment to suggest a filename for download
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"playlist_%s.m3u\"", playlistID))
+
+	// 3. Write the M3U content directly as the HTTP response body
+	c.String(http.StatusOK, m3uContent)
 }

@@ -15,5 +15,5 @@ type Track struct {
 	Duration         int                `bson:"duration" json:"duration"` // in seconds
 	URL              string             `bson:"url" json:"url"`           // mp3 URL
 	FileID           primitive.ObjectID `bson:"file_id" json:"file_id"`
-	PlaylistID       primitive.ObjectID `bson:"playlist_id,omitempty" json:"playlist_id"`
+	// PlaylistID       primitive.ObjectID `bson:"playlist_id,omitempty" json:"playlist_id"`
 }

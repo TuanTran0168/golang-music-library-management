@@ -103,6 +103,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/playlists/stream/{id}.m3u": {
+            "get": {
+                "description": "Streams an M3U playlist file containing URLs to the MP3 tracks.",
+                "produces": [
+                    "audio/x-mpegurl"
+                ],
+                "tags": [
+                    "Playlists"
+                ],
+                "summary": "Stream playlist as M3U",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Playlist ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "M3U playlist content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/playlists/{id}": {
             "get": {
                 "description": "Get playlist detail",
@@ -682,9 +729,6 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "playlist_id": {
-                    "type": "string"
-                },
                 "release_year": {
                     "type": "integer"
                 },
@@ -755,7 +799,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "Music Library API",
-	Description:      "A simple RESTful Music Library API built with Golang and MongoDB",
+	Description:      "Clean architecture Music Library API with Golang (Gin) + MongoDB, featuring CRUD, MP3 uploads, search, and basic MP3 streaming.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

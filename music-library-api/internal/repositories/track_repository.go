@@ -6,6 +6,8 @@ import (
 
 	"github.com/kamva/mgm/v3"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -16,12 +18,17 @@ type ITrackRepository interface {
 	UpdateTrack(track *models.Track) error
 	DeleteTrack(id string) error
 	SearchTracks(query string, page, limit int) ([]*models.Track, error)
+	GetTracksByIDs(ids []primitive.ObjectID) ([]*models.Track, error)
 }
 
-type trackRepository struct{}
+type trackRepository struct {
+	Collection *mongo.Collection
+}
 
-func NewTrackRepository() ITrackRepository {
-	return &trackRepository{}
+func NewTrackRepository(db *mongo.Database) ITrackRepository {
+	return &trackRepository{
+		Collection: db.Collection("tracks"),
+	}
 }
 
 // Get one track by ID
@@ -88,5 +95,34 @@ func (r *trackRepository) SearchTracks(query string, page, limit int) ([]*models
 	if err := cursor.All(context.Background(), &tracks); err != nil {
 		return nil, err
 	}
+	return tracks, nil
+}
+
+func (r *trackRepository) GetTracksByIDs(ids []primitive.ObjectID) ([]*models.Track, error) {
+	if len(ids) == 0 {
+		return []*models.Track{}, nil
+	}
+
+	filter := bson.M{"_id": bson.M{"$in": ids}}
+
+	cursor, err := r.Collection.Find(context.Background(), filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	var tracks []*models.Track
+	for cursor.Next(context.Background()) {
+		var t models.Track
+		if err := cursor.Decode(&t); err != nil {
+			return nil, err
+		}
+		tracks = append(tracks, &t)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
 	return tracks, nil
 }

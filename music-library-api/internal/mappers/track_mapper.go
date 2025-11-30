@@ -17,6 +17,6 @@ func ToTrackResponse(m *models.Track) dto.TrackResponse {
 		ReleaseYear: m.ReleaseYear,
 		Duration:    m.Duration,
 		FileID:      m.FileID.Hex(),
-		PlaylistID:  m.PlaylistID.Hex(),
+		// PlaylistID:  m.PlaylistID.Hex(),
 	}
 }
