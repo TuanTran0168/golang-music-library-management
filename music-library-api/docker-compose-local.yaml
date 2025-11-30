@@ -13,7 +13,7 @@ services:
       - "27027:27017"  # host:container
     volumes:
       - mongo_data:/data/db
-      - mongo_dump:/dump
+      - ./backups:/dump
     networks:
       - music_network
 
@@ -39,7 +39,6 @@ services:
 
 volumes:
   mongo_data:
-  mongo_dump:
   go_mod_cache:
   go_build_cache:
 
