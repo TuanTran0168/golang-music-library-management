@@ -9,8 +9,11 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: Admin@123
       MONGO_INITDB_DATABASE: music_library
+    ports:
+      - "27027:27017"
     volumes:
       - mongo_data:/data/db
+      - ./backups:/dump
     networks:
       - music_network
 
