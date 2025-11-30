@@ -8,6 +8,8 @@ import (
 	"music-library-api/internal/repositories"
 	"music-library-api/pkg/utils"
 	"strings"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type IPlaylistService interface {
@@ -89,41 +91,6 @@ func (s *PlaylistService) StreamPlaylistM3U(id string, trackStreamBaseURL string
 	return m3uContent.String(), nil
 }
 
-func (s *PlaylistService) CreatePlaylistFormData(playlist *dto.CreatePlaylistRequest) (*models.Playlist, error) {
-	var albumCoverURL string
-	var err error
-
-	if playlist.AlbumCover != nil {
-		albumCoverURL, err = s.uploadAlbumCover(playlist.AlbumCover)
-		if err != nil {
-			return nil, fmt.Errorf("failed to upload album cover: %w", err)
-		}
-	}
-
-	var trackIDs []string
-	if len(playlist.TrackIDs) > 0 {
-		trackIDs = strings.Split(playlist.TrackIDs[0], ",")
-	}
-
-	objIDs, err := utils.ConvertToObjectIDs(trackIDs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert track IDs: %w", err)
-	}
-
-	p := &models.Playlist{
-		Title:      playlist.Title,
-		AlbumCover: albumCoverURL,
-		TrackIDs:   objIDs,
-	}
-
-	playlistObj, err := s.repo.CreatePlaylist(p)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create playlist: %w", err)
-	}
-
-	return playlistObj, nil
-}
-
 func (s *PlaylistService) uploadAlbumCover(fileHeader *multipart.FileHeader) (string, error) {
 	if s.CloudinaryUtil == nil {
 		return "", fmt.Errorf("cloudinary util is not configured")
@@ -143,6 +110,57 @@ func (s *PlaylistService) uploadAlbumCover(fileHeader *multipart.FileHeader) (st
 	return url, nil
 }
 
+func (s *PlaylistService) validateTrackIDs(trackIDs []string) ([]primitive.ObjectID, error) {
+	if len(trackIDs) == 0 {
+		return nil, nil
+	}
+
+	if strings.Contains(trackIDs[0], ",") {
+		trackIDs = strings.Split(trackIDs[0], ",")
+	}
+
+	trackIDs = utils.UniqueStrings(trackIDs)
+
+	objIDs, err := utils.ConvertToObjectIDs(trackIDs)
+	if err != nil {
+		return nil, fmt.Errorf("invalid track IDs: %w", err)
+	}
+
+	missing, err := s.trackService.FindMissingIDs(objIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check track IDs: %w", err)
+	}
+	if len(missing) > 0 {
+		return nil, fmt.Errorf("these track IDs do not exist: %v", missing)
+	}
+
+	return objIDs, nil
+}
+
+func (s *PlaylistService) CreatePlaylistFormData(playlist *dto.CreatePlaylistRequest) (*models.Playlist, error) {
+	var albumCoverURL string
+	if playlist.AlbumCover != nil {
+		url, err := s.uploadAlbumCover(playlist.AlbumCover)
+		if err != nil {
+			return nil, fmt.Errorf("failed to upload album cover: %w", err)
+		}
+		albumCoverURL = url
+	}
+
+	objIDs, err := s.validateTrackIDs(playlist.TrackIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	p := &models.Playlist{
+		Title:      playlist.Title,
+		AlbumCover: albumCoverURL,
+		TrackIDs:   objIDs,
+	}
+
+	return s.repo.CreatePlaylist(p)
+}
+
 func (s *PlaylistService) UpdatePlaylistFormData(id string, req *dto.UpdatePlaylistRequest) (*models.Playlist, error) {
 	pl, err := s.repo.GetPlaylistByID(id)
 	if err != nil {
@@ -153,42 +171,39 @@ func (s *PlaylistService) UpdatePlaylistFormData(id string, req *dto.UpdatePlayl
 		pl.Title = req.Title
 	}
 
-	var albumCoverURL string
 	if req.AlbumCover != nil {
-		albumCoverURL, err = s.uploadAlbumCover(req.AlbumCover)
+		url, err := s.uploadAlbumCover(req.AlbumCover)
 		if err != nil {
 			return nil, fmt.Errorf("failed to upload album cover: %w", err)
 		}
-		pl.AlbumCover = albumCoverURL
+		pl.AlbumCover = url
 	}
 
-	// Convert track IDs
 	if len(req.TrackIDs) > 0 {
-		var trackIDs []string
-		if len(req.TrackIDs) == 1 && strings.Contains(req.TrackIDs[0], ",") {
-			trackIDs = strings.Split(req.TrackIDs[0], ",")
-		} else {
-			trackIDs = req.TrackIDs
-		}
-
-		objIDs, err := utils.ConvertToObjectIDs(trackIDs)
+		newIDs, err := s.validateTrackIDs(req.TrackIDs)
 		if err != nil {
-			return nil, fmt.Errorf("invalid track IDs: %w", err)
+			return nil, err
 		}
 
 		switch req.Mode {
 		case dto.ModeAppend:
-			pl.TrackIDs = append(pl.TrackIDs, objIDs...)
+			var existingIDs []string
+			for _, id := range pl.TrackIDs {
+				existingIDs = append(existingIDs, id.Hex())
+			}
+			var combined []string
+			for _, id := range newIDs {
+				combined = append(combined, id.Hex())
+			}
+			combined = utils.UniqueStrings(append(existingIDs, combined...))
+			pl.TrackIDs, err = utils.ConvertToObjectIDs(combined)
+			if err != nil {
+				return nil, fmt.Errorf("invalid track IDs after append: %w", err)
+			}
 		default: // overwrite
-			pl.TrackIDs = objIDs
+			pl.TrackIDs = newIDs
 		}
 	}
 
-	// Update playlist
-	playlistObj, err := s.repo.UpdatePlaylist(pl)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update playlist: %w", err)
-	}
-
-	return playlistObj, nil
+	return s.repo.UpdatePlaylist(pl)
 }

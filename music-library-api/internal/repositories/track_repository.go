@@ -19,6 +19,8 @@ type ITrackRepository interface {
 	DeleteTrack(id string) error
 	SearchTracks(query string, page, limit int) ([]*models.Track, error)
 	GetTracksByIDs(ids []primitive.ObjectID) ([]*models.Track, error)
+	FindMissingIDs(ids []primitive.ObjectID) ([]primitive.ObjectID, error)
+	ExistAllByIDs(ids []primitive.ObjectID) (bool, error)
 }
 
 type trackRepository struct {
@@ -125,4 +127,36 @@ func (r *trackRepository) GetTracksByIDs(ids []primitive.ObjectID) ([]*models.Tr
 	}
 
 	return tracks, nil
+}
+
+func (r *trackRepository) FindMissingIDs(ids []primitive.ObjectID) ([]primitive.ObjectID, error) {
+	cursor, err := r.Collection.Find(context.Background(), bson.M{"_id": bson.M{"$in": ids}})
+	if err != nil {
+		return nil, err
+	}
+	var existing []models.Track
+	if err := cursor.All(context.Background(), &existing); err != nil {
+		return nil, err
+	}
+
+	existingMap := make(map[primitive.ObjectID]struct{})
+	for _, t := range existing {
+		existingMap[t.ID] = struct{}{}
+	}
+
+	var missing []primitive.ObjectID
+	for _, id := range ids {
+		if _, ok := existingMap[id]; !ok {
+			missing = append(missing, id)
+		}
+	}
+	return missing, nil
+}
+
+func (r *trackRepository) ExistAllByIDs(ids []primitive.ObjectID) (bool, error) {
+	count, err := r.Collection.CountDocuments(context.Background(), bson.M{"_id": bson.M{"$in": ids}})
+	if err != nil {
+		return false, err
+	}
+	return count == int64(len(ids)), nil
 }
