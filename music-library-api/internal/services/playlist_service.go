@@ -16,10 +16,11 @@ type IPlaylistService interface {
 	GetPlaylistByID(id string) (*models.Playlist, error)
 	GetPlaylists(page, limit int) ([]*models.Playlist, error)
 	CreatePlaylist(playlist *models.Playlist) (*models.Playlist, error)
-	UpdatePlaylist(playlist *models.Playlist) error
+	UpdatePlaylist(playlist *models.Playlist) (*models.Playlist, error)
 	DeletePlaylist(id string) error
 	StreamPlaylistM3U(id string, trackStreamBaseURL string) (string, error)
-	CreatePlaylistFormData(playlist *dto.CreatePlaylistRequest, trackIDs []primitive.ObjectID) (*models.Playlist, error)
+	CreatePlaylistFormData(req *dto.CreatePlaylistRequest) (*models.Playlist, error)
+	UpdatePlaylistFormData(id string, req *dto.UpdatePlaylistRequest) (*models.Playlist, error)
 }
 
 type PlaylistService struct {
@@ -48,7 +49,7 @@ func (s *PlaylistService) CreatePlaylist(playlist *models.Playlist) (*models.Pla
 	return s.repo.CreatePlaylist(playlist)
 }
 
-func (s *PlaylistService) UpdatePlaylist(playlist *models.Playlist) error {
+func (s *PlaylistService) UpdatePlaylist(playlist *models.Playlist) (*models.Playlist, error) {
 	return s.repo.UpdatePlaylist(playlist)
 }
 
@@ -90,31 +91,6 @@ func (s *PlaylistService) StreamPlaylistM3U(id string, trackStreamBaseURL string
 	return m3uContent.String(), nil
 }
 
-func (s *PlaylistService) CreatePlaylistFormData(playlist *dto.CreatePlaylistRequest, trackIDs []primitive.ObjectID) (*models.Playlist, error) {
-	var albumCoverURL string
-	var err error
-
-	if playlist.AlbumCover != nil {
-		albumCoverURL, err = s.uploadAlbumCover(playlist.AlbumCover)
-		if err != nil {
-			return nil, fmt.Errorf("failed to upload album cover: %w", err)
-		}
-	}
-
-	p := &models.Playlist{
-		Title:      playlist.Title,
-		AlbumCover: albumCoverURL,
-		TrackIDs:   trackIDs,
-	}
-
-	playlistObj, err := s.repo.CreatePlaylist(p)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create playlist: %w", err)
-	}
-
-	return playlistObj, nil
-}
-
 func (s *PlaylistService) uploadAlbumCover(fileHeader *multipart.FileHeader) (string, error) {
 	if s.CloudinaryUtil == nil {
 		return "", fmt.Errorf("cloudinary util is not configured")
@@ -132,4 +108,102 @@ func (s *PlaylistService) uploadAlbumCover(fileHeader *multipart.FileHeader) (st
 	}
 
 	return url, nil
+}
+
+func (s *PlaylistService) validateTrackIDs(trackIDs []string) ([]primitive.ObjectID, error) {
+	if len(trackIDs) == 0 {
+		return nil, nil
+	}
+
+	if strings.Contains(trackIDs[0], ",") {
+		trackIDs = strings.Split(trackIDs[0], ",")
+	}
+
+	trackIDs = utils.UniqueStrings(trackIDs)
+
+	objIDs, err := utils.ConvertToObjectIDs(trackIDs)
+	if err != nil {
+		return nil, fmt.Errorf("invalid track IDs: %w", err)
+	}
+
+	missing, err := s.trackService.FindMissingIDs(objIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check track IDs: %w", err)
+	}
+	if len(missing) > 0 {
+		return nil, fmt.Errorf("these track IDs do not exist: %v", missing)
+	}
+
+	return objIDs, nil
+}
+
+func (s *PlaylistService) CreatePlaylistFormData(playlist *dto.CreatePlaylistRequest) (*models.Playlist, error) {
+	var albumCoverURL string
+	if playlist.AlbumCover != nil {
+		url, err := s.uploadAlbumCover(playlist.AlbumCover)
+		if err != nil {
+			return nil, fmt.Errorf("failed to upload album cover: %w", err)
+		}
+		albumCoverURL = url
+	}
+
+	objIDs, err := s.validateTrackIDs(playlist.TrackIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	p := &models.Playlist{
+		Title:      playlist.Title,
+		AlbumCover: albumCoverURL,
+		TrackIDs:   objIDs,
+	}
+
+	return s.repo.CreatePlaylist(p)
+}
+
+func (s *PlaylistService) UpdatePlaylistFormData(id string, req *dto.UpdatePlaylistRequest) (*models.Playlist, error) {
+	pl, err := s.repo.GetPlaylistByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.Title != "" {
+		pl.Title = req.Title
+	}
+
+	if req.AlbumCover != nil {
+		url, err := s.uploadAlbumCover(req.AlbumCover)
+		if err != nil {
+			return nil, fmt.Errorf("failed to upload album cover: %w", err)
+		}
+		pl.AlbumCover = url
+	}
+
+	if len(req.TrackIDs) > 0 {
+		newIDs, err := s.validateTrackIDs(req.TrackIDs)
+		if err != nil {
+			return nil, err
+		}
+
+		switch req.Mode {
+		case dto.ModeAppend:
+			var existingIDs []string
+			for _, id := range pl.TrackIDs {
+				existingIDs = append(existingIDs, id.Hex())
+			}
+			var combined []string
+			for _, id := range newIDs {
+				combined = append(combined, id.Hex())
+			}
+			combined = utils.UniqueStrings(append(existingIDs, combined...))
+			pl.TrackIDs, err = utils.ConvertToObjectIDs(combined)
+			if err != nil {
+				return nil, fmt.Errorf("invalid track IDs after append: %w", err)
+			}
+		default: // overwrite
+			pl.TrackIDs = newIDs
+		}
+	}
+
+	return s.repo.UpdatePlaylist(pl)
 }

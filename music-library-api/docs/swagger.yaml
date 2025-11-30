@@ -51,17 +51,6 @@ definitions:
       updated_at:
         type: string
     type: object
-  dto.UpdatePlaylistRequest:
-    properties:
-      album_cover:
-        type: string
-      title:
-        type: string
-      track_ids:
-        items:
-          type: string
-        type: array
-    type: object
   dto.UpdateTrackRequest:
     properties:
       album:
@@ -209,20 +198,37 @@ paths:
       - Playlists
     patch:
       consumes:
-      - application/json
-      description: Update playlist by ID
+      - multipart/form-data
+      description: Update playlist by ID (partial update, form-data)
       parameters:
       - description: Playlist ID
         in: path
         name: id
         required: true
         type: string
-      - description: Playlist update
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/dto.UpdatePlaylistRequest'
+      - description: Playlist title
+        in: formData
+        name: title
+        type: string
+      - description: Album cover image
+        in: formData
+        name: album_cover
+        type: file
+      - collectionFormat: csv
+        description: Track IDs, comma separated
+        in: formData
+        items:
+          type: string
+        name: track_ids
+        type: array
+      - default: append
+        description: Track update mode
+        enum:
+        - append
+        - overwrite
+        in: formData
+        name: mode
+        type: string
       produces:
       - application/json
       responses:

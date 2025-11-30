@@ -197,9 +197,9 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Update playlist by ID",
+                "description": "Update playlist by ID (partial update, form-data)",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -217,13 +217,37 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Playlist update",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.UpdatePlaylistRequest"
-                        }
+                        "type": "string",
+                        "description": "Playlist title",
+                        "name": "title",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Album cover image",
+                        "name": "album_cover",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Track IDs, comma separated",
+                        "name": "track_ids",
+                        "in": "formData"
+                    },
+                    {
+                        "enum": [
+                            "append",
+                            "overwrite"
+                        ],
+                        "type": "string",
+                        "default": "append",
+                        "description": "Track update mode",
+                        "name": "mode",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -731,23 +755,6 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
-                }
-            }
-        },
-        "dto.UpdatePlaylistRequest": {
-            "type": "object",
-            "properties": {
-                "album_cover": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "track_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 }
             }
         },

@@ -2,6 +2,13 @@ package dto
 
 import "mime/multipart"
 
+type PlaylistUpdateMode string
+
+const (
+	ModeOverwrite PlaylistUpdateMode = "overwrite"
+	ModeAppend    PlaylistUpdateMode = "append"
+)
+
 type CreatePlaylistRequest struct {
 	Title      string                `form:"title" binding:"required"`
 	AlbumCover *multipart.FileHeader `form:"album_cover"`
@@ -9,9 +16,10 @@ type CreatePlaylistRequest struct {
 }
 
 type UpdatePlaylistRequest struct {
-	Title      string   `json:"title"`
-	AlbumCover string   `json:"album_cover"`
-	TrackIDs   []string `json:"track_ids"`
+	Title      string                `form:"title"`
+	AlbumCover *multipart.FileHeader `form:"album_cover"`
+	TrackIDs   []string              `form:"track_ids"`
+	Mode       PlaylistUpdateMode    `form:"mode" binding:"required,oneof=overwrite append"`
 }
 
 type PlaylistResponse struct {

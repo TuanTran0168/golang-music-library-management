@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -9,9 +10,9 @@ import (
 	"music-library-api/internal/dto"
 	"music-library-api/internal/mappers"
 	"music-library-api/internal/services"
-	"music-library-api/pkg/utils"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type PlaylistHandler struct {
@@ -73,18 +74,7 @@ func (h *PlaylistHandler) CreatePlaylist(c *gin.Context) {
 		return
 	}
 
-	var trackIDs []string
-	if len(req.TrackIDs) > 0 {
-		trackIDs = strings.Split(req.TrackIDs[0], ",")
-	}
-
-	objIDs, err := utils.ConvertToObjectIDs(trackIDs)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid track IDs"})
-		return
-	}
-
-	playlist, err := h.service.CreatePlaylistFormData(&req, objIDs)
+	playlist, err := h.service.CreatePlaylistFormData(&req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -115,12 +105,15 @@ func (h *PlaylistHandler) GetPlaylistByID(c *gin.Context) {
 }
 
 // @Summary      Update playlist
-// @Description  Update playlist by ID
+// @Description  Update playlist by ID (partial update, form-data)
 // @Tags         Playlists
-// @Accept       json
+// @Accept       multipart/form-data
 // @Produce      json
-// @Param        id path string true "Playlist ID"
-// @Param        payload body dto.UpdatePlaylistRequest true "Playlist update"
+// @Param        id           path     string true  "Playlist ID"
+// @Param        title        formData string false "Playlist title"
+// @Param        album_cover  formData file   false "Album cover image"
+// @Param        track_ids    formData []string false "Track IDs, comma separated"
+// @Param        mode         formData string false "Track update mode" Enums(append, overwrite) Default(append)
 // @Success      200 {object} dto.PlaylistResponse
 // @Failure      400 {object} map[string]string
 // @Failure      404 {object} map[string]string
@@ -130,38 +123,23 @@ func (h *PlaylistHandler) UpdatePlaylist(c *gin.Context) {
 	idStr := c.Param("id")
 
 	var req dto.UpdatePlaylistRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	pl, err := h.service.GetPlaylistByID(idStr)
+	// Gọi service update, service sẽ handle upload file + trackIDs
+	updatedPlaylist, err := h.service.UpdatePlaylistFormData(idStr, &req)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "playlist not found"})
-		return
-	}
-
-	if req.Title != "" {
-		pl.Title = req.Title
-	}
-	if req.AlbumCover != "" {
-		pl.AlbumCover = req.AlbumCover
-	}
-	if len(req.TrackIDs) > 0 {
-		trackIDs, err := utils.ConvertToObjectIDs(req.TrackIDs)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid track IDs"})
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "playlist not found"})
 			return
 		}
-		pl.TrackIDs = trackIDs
-	}
-
-	if err := h.service.UpdatePlaylist(pl); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update playlist"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, mappers.ToPlaylistResponse(pl))
+	c.JSON(http.StatusOK, mappers.ToPlaylistResponse(updatedPlaylist))
 }
 
 // @Summary      Delete playlist

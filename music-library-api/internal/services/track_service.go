@@ -21,6 +21,8 @@ type ITrackService interface {
 	DeleteTrack(id string) error
 	SearchTracks(query string, page, limit int) ([]*models.Track, error)
 	UploadMP3ToGridFS(filename string, r io.Reader) (primitive.ObjectID, error)
+	FindMissingIDs(ids []primitive.ObjectID) ([]primitive.ObjectID, error)
+	ExistAllByIDs(ids []primitive.ObjectID) (bool, error)
 
 	// stream
 	OpenTrackStream(fileID primitive.ObjectID, rangeHeader string) (*TrackStream, error)
@@ -151,4 +153,12 @@ func (s *TrackService) OpenTrackStream(fileID primitive.ObjectID, rangeHeader st
 
 func (s *TrackService) GetTracksByIDs(ids []primitive.ObjectID) ([]*models.Track, error) {
 	return s.repo.GetTracksByIDs(ids)
+}
+
+func (s *TrackService) FindMissingIDs(ids []primitive.ObjectID) ([]primitive.ObjectID, error) {
+	return s.repo.FindMissingIDs(ids)
+}
+
+func (s *TrackService) ExistAllByIDs(ids []primitive.ObjectID) (bool, error) {
+	return s.repo.ExistAllByIDs(ids)
 }
