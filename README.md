@@ -1,26 +1,25 @@
 # 🎵 Music Library Management
 
-A clean architecture Music Library Management built with **Golang (Gin)** and
-**MongoDB**.
-Supports CRUD for tracks/playlists, MP3 uploads, search, and **simple MP3
-streaming**.
+A clean architecture **Music Library Management** application built with **Golang (Gin)** and **MongoDB**.  
+It supports:  
+- **CRUD** operations for **tracks** and **playlists**  
+- **MP3 uploads** using **GridFS**  
+- **Search functionality**  
+- **Simple MP3 streaming**
 
-------------------------------------------------------------------------
 
-### 🔧 Tech Stack
-- **Golang 1.25.1** 🟦
-- **Gin** ⚡ (HTTP web framework)
-- **MongoDB** 🗄 (`mgm v3`, `GridFS`)
-- **Cloudinary** ☁️ (Image upload)
-- **Swagger** 📑 (API docs)
-- **Docker & Docker compose** 🐳 (Containerization)
-- **Audio Processing** 🎵 (`tag`, `go-mp3`)
 
 # 🚀 Run with Docker (Recommended)
-
-## 1️⃣ Start MongoDB + API
+#### 1️⃣ Go to project folder
 ```bash
-docker-compose -f docker-compose-local.yaml up -d
+cd music-library-api
+```
+> ⚠ **Important:** Make sure you are in the root folder of the project where 
+> `docker-compose.yml` exists before running any `docker-compose` commands.
+
+#### 2️⃣ Start MongoDB + Backend APIs
+```bash
+docker-compose up -d
 ```
 This will automatically: 
 - Start **MongoDB** 
@@ -37,7 +36,7 @@ This will automatically:
 
 # 🎧 Streaming APIs
 
-### ▶ Stream a track
+### ▶ Stream a track (`.mp3`)
 ```bash
 GET /api/tracks/{id}/stream
 ```
@@ -63,7 +62,9 @@ GET /api/tracks/{id}/stream
     │   └── utils
     ├── uploads/
     │   ├── *.mp3
+    ├── Dockerfile
     ├── Dockerfile.local
+    ├── docker-compose.yaml
     ├── docker-compose-local.yaml
     └── run.sh
 
@@ -73,19 +74,29 @@ GET /api/tracks/{id}/stream
 
 ### 🗑 Stop containers
 ```bash
-docker-compose -f docker-compose-local.yaml down
+docker-compose down
 ```
 
 ### 🗑 Remove containers, volumes, networks
 
 ```bash
-docker-compose -f docker-compose-local.yaml down -v
+docker-compose down -v
 ```
 ```bash
-docker compose -f docker-compose-local.yml down -v --rmi all --remove-orphans
+docker compose down -v --rmi all --remove-orphans
 ```
 
 
 # ✔ Done!
 
 Just run `docker-compose` and everything works out of the box.
+
+
+# 🔧 Tech Stack
+- **Golang 1.25.1** 🟦
+- **Gin** ⚡ (HTTP web framework)
+- **MongoDB** 🗄 (`mgm v3`, `GridFS`)
+- **Cloudinary** ☁️ (Image upload)
+- **Swagger** 📑 (API docs)
+- **Docker & Docker compose** 🐳 (Containerization)
+- **Audio Processing** 🎵 (`tag`, `go-mp3`)
