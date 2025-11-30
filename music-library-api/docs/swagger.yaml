@@ -57,8 +57,6 @@ definitions:
         type: string
       id:
         type: string
-      playlist_id:
-        type: string
       release_year:
         type: integer
       title:
@@ -96,7 +94,8 @@ definitions:
 host: localhost:8080
 info:
   contact: {}
-  description: A simple RESTful Music Library API built with Golang and MongoDB
+  description: Clean architecture Music Library API with Golang (Gin) + MongoDB, featuring
+    CRUD, MP3 uploads, search, and basic MP3 streaming.
   title: Music Library API
   version: "1.0"
 paths:
@@ -253,6 +252,37 @@ paths:
               type: string
             type: object
       summary: Update playlist
+      tags:
+      - Playlists
+  /playlists/stream/{id}.m3u:
+    get:
+      description: Streams an M3U playlist file containing URLs to the MP3 tracks.
+      parameters:
+      - description: Playlist ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - audio/x-mpegurl
+      responses:
+        "200":
+          description: M3U playlist content
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Stream playlist as M3U
       tags:
       - Playlists
   /tracks:

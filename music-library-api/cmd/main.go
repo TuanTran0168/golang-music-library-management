@@ -20,7 +20,7 @@ import (
 
 // @title Music Library API
 // @version 1.0
-// @description A simple RESTful Music Library API built with Golang and MongoDB
+// @description Clean architecture Music Library API with Golang (Gin) + MongoDB, featuring CRUD, MP3 uploads, search, and basic MP3 streaming.
 // @host localhost:8080
 // @BasePath /api
 // @securityDefinitions.apikey BearerAuth
@@ -36,12 +36,12 @@ func main() {
 	_, _, mongodb, _ := mgm.DefaultConfigs()
 
 	// 3. Initialize repositories
-	trackRepo := repositories.NewTrackRepository()
+	trackRepo := repositories.NewTrackRepository(mongodb)
 	playlistRepo := repositories.NewPlaylistRepository()
 
 	// 4. Initialize services
 	trackService := services.NewTrackService(trackRepo, mongodb)
-	playlistService := services.NewPlaylistService(playlistRepo)
+	playlistService := services.NewPlaylistService(playlistRepo, trackService)
 
 	// 5. Initialize handlers
 	trackHandler := handlers.NewTrackHandler(trackService, mongodb)

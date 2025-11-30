@@ -33,7 +33,7 @@ type TrackResponse struct {
 	ReleaseYear int    `json:"release_year"`
 	Duration    int    `json:"duration"`
 	FileID      string `json:"file_id"`
-	PlaylistID  string `json:"playlist_id"`
+	// PlaylistID  string `json:"playlist_id"`
 }
 
 type TrackListResponse struct {
