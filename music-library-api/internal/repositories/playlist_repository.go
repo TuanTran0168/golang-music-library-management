@@ -12,7 +12,7 @@ import (
 type IPlaylistRepository interface {
 	GetPlaylistByID(id string) (*models.Playlist, error)
 	GetPlaylists(page, limit int) ([]*models.Playlist, error)
-	CreatePlaylist(playlist *models.Playlist) error
+	CreatePlaylist(playlist *models.Playlist) (*models.Playlist, error)
 	UpdatePlaylist(playlist *models.Playlist) error
 	DeletePlaylist(id string) error
 }
@@ -45,8 +45,8 @@ func (r *playlistRepository) GetPlaylists(page, limit int) ([]*models.Playlist, 
 	return playlists, nil
 }
 
-func (r *playlistRepository) CreatePlaylist(playlist *models.Playlist) error {
-	return mgm.Coll(playlist).Create(playlist)
+func (r *playlistRepository) CreatePlaylist(playlist *models.Playlist) (*models.Playlist, error) {
+	return playlist, mgm.Coll(playlist).Create(playlist)
 }
 
 func (r *playlistRepository) UpdatePlaylist(playlist *models.Playlist) error {

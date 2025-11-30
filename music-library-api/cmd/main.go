@@ -9,6 +9,7 @@ import (
 	router "music-library-api/internal/routers"
 	"music-library-api/internal/services"
 	database "music-library-api/pkg/databases"
+	"music-library-api/pkg/utils"
 
 	_ "music-library-api/docs"
 
@@ -35,13 +36,18 @@ func main() {
 	database.ConnectMongo(cfg)
 	_, _, mongodb, _ := mgm.DefaultConfigs()
 
+	cloudUtil, err := utils.NewCloudinaryUtil(cfg)
+	if err != nil {
+		log.Fatal("❌ Failed to init Cloudinary: ", err)
+	}
+
 	// 3. Initialize repositories
 	trackRepo := repositories.NewTrackRepository(mongodb)
 	playlistRepo := repositories.NewPlaylistRepository()
 
 	// 4. Initialize services
 	trackService := services.NewTrackService(trackRepo, mongodb)
-	playlistService := services.NewPlaylistService(playlistRepo, trackService)
+	playlistService := services.NewPlaylistService(playlistRepo, trackService, cloudUtil)
 
 	// 5. Initialize handlers
 	trackHandler := handlers.NewTrackHandler(trackService, mongodb)

@@ -55,7 +55,7 @@ const docTemplate = `{
             "post": {
                 "description": "Create new playlist",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -66,13 +66,27 @@ const docTemplate = `{
                 "summary": "Create playlist",
                 "parameters": [
                     {
-                        "description": "Playlist data",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.CreatePlaylistRequest"
-                        }
+                        "type": "string",
+                        "description": "Playlist title",
+                        "name": "title",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Album cover image",
+                        "name": "album_cover",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Track IDs",
+                        "name": "track_ids",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -642,26 +656,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dto.CreatePlaylistRequest": {
-            "type": "object",
-            "required": [
-                "title"
-            ],
-            "properties": {
-                "album_cover": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "track_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
         "dto.PlaylistResponse": {
             "type": "object",
             "properties": {

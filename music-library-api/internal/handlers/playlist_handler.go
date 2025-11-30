@@ -8,7 +8,6 @@ import (
 
 	"music-library-api/internal/dto"
 	"music-library-api/internal/mappers"
-	"music-library-api/internal/models"
 	"music-library-api/internal/services"
 	"music-library-api/pkg/utils"
 
@@ -58,38 +57,40 @@ func (h *PlaylistHandler) GetPlaylists(c *gin.Context) {
 // @Summary      Create playlist
 // @Description  Create new playlist
 // @Tags         Playlists
-// @Accept       json
+// @Accept       multipart/form-data
 // @Produce      json
-// @Param        payload body dto.CreatePlaylistRequest true "Playlist data"
+// @Param        title        formData string true  "Playlist title"
+// @Param        album_cover  formData file   false "Album cover image"
+// @Param        track_ids    formData []string false "Track IDs"
 // @Success      201 {object} dto.PlaylistResponse
 // @Failure      400 {object} map[string]string
 // @Failure      500 {object} map[string]string
 // @Router       /playlists [post]
 func (h *PlaylistHandler) CreatePlaylist(c *gin.Context) {
 	var req dto.CreatePlaylistRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	trackIDs, err := utils.ConvertToObjectIDs(req.TrackIDs)
+	var trackIDs []string
+	if len(req.TrackIDs) > 0 {
+		trackIDs = strings.Split(req.TrackIDs[0], ",")
+	}
+
+	objIDs, err := utils.ConvertToObjectIDs(trackIDs)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid track IDs"})
 		return
 	}
 
-	pl := &models.Playlist{
-		Title:      req.Title,
-		AlbumCover: req.AlbumCover,
-		TrackIDs:   trackIDs,
-	}
-
-	if err := h.service.CreatePlaylist(pl); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create playlist"})
+	playlist, err := h.service.CreatePlaylistFormData(&req, objIDs)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, mappers.ToPlaylistResponse(pl))
+	c.JSON(http.StatusCreated, playlist)
 }
 
 // @Summary      Get playlist by ID

@@ -1,18 +1,5 @@
 basePath: /api
 definitions:
-  dto.CreatePlaylistRequest:
-    properties:
-      album_cover:
-        type: string
-      title:
-        type: string
-      track_ids:
-        items:
-          type: string
-        type: array
-    required:
-    - title
-    type: object
   dto.PlaylistResponse:
     properties:
       album_cover:
@@ -126,15 +113,25 @@ paths:
       - Playlists
     post:
       consumes:
-      - application/json
+      - multipart/form-data
       description: Create new playlist
       parameters:
-      - description: Playlist data
-        in: body
-        name: payload
+      - description: Playlist title
+        in: formData
+        name: title
         required: true
-        schema:
-          $ref: '#/definitions/dto.CreatePlaylistRequest'
+        type: string
+      - description: Album cover image
+        in: formData
+        name: album_cover
+        type: file
+      - collectionFormat: csv
+        description: Track IDs
+        in: formData
+        items:
+          type: string
+        name: track_ids
+        type: array
       produces:
       - application/json
       responses:
