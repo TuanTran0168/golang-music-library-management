@@ -269,7 +269,7 @@ func (h *TrackHandler) SearchTracks(c *gin.Context) {
 // @Header 206 {string} Content-Range "Bytes range of the content"
 // @Header 206 {string} Content-Type "audio/mpeg"
 // @Failure 404 {object} map[string]string
-// @Router /tracks/stream/{id} [get]
+// @Router /tracks/{id}/stream [get]
 func (h *TrackHandler) StreamTrack(c *gin.Context) {
 	id := c.Param("id")
 

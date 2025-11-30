@@ -11,7 +11,7 @@ func RegisterTrackRoutes(rg *gin.RouterGroup, handler *handlers.TrackHandler) {
 	{
 		tracks.GET("/:id", handler.GetTrackByID)
 		tracks.GET("/search", handler.SearchTracks)
-		tracks.GET("/stream/:id", handler.StreamTrack)
+		tracks.GET("/:id/stream", handler.StreamTrack)
 		tracks.GET("", handler.GetTracks)
 		tracks.POST("", handler.CreateTrack)
 		tracks.PATCH("/:id", handler.UpdateTrack)

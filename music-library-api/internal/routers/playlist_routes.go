@@ -14,6 +14,6 @@ func RegisterPlaylistRoutes(rg *gin.RouterGroup, handler *handlers.PlaylistHandl
 		playlists.POST("", handler.CreatePlaylist)
 		playlists.PATCH("/:id", handler.UpdatePlaylist)
 		playlists.DELETE("/:id", handler.DeletePlaylist)
-		playlists.GET("/stream/:id", handler.StreamPlaylistM3U)
+		playlists.GET("/:id/stream", handler.StreamPlaylistM3U)
 	}
 }

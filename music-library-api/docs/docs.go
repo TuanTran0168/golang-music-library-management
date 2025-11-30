@@ -103,53 +103,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/playlists/stream/{id}.m3u": {
-            "get": {
-                "description": "Streams an M3U playlist file containing URLs to the MP3 tracks.",
-                "produces": [
-                    "audio/x-mpegurl"
-                ],
-                "tags": [
-                    "Playlists"
-                ],
-                "summary": "Stream playlist as M3U",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Playlist ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "M3U playlist content",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/playlists/{id}": {
             "get": {
                 "description": "Get playlist detail",
@@ -273,6 +226,53 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/playlists/{id}/stream": {
+            "get": {
+                "description": "Streams an M3U playlist file containing URLs to the MP3 tracks.",
+                "produces": [
+                    "audio/x-mpegurl"
+                ],
+                "tags": [
+                    "Playlists"
+                ],
+                "summary": "Stream playlist as M3U",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Playlist ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "M3U playlist content",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "404": {
@@ -465,38 +465,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/tracks/stream/{id}": {
-            "get": {
-                "description": "Stream MP3 file, support Range header",
-                "produces": [
-                    "audio/mpeg"
-                ],
-                "tags": [
-                    "tracks"
-                ],
-                "summary": "Stream an audio track",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Track ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/tracks/{id}": {
             "get": {
                 "description": "Retrieve a single track by its ID",
@@ -630,6 +598,38 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/tracks/{id}/stream": {
+            "get": {
+                "description": "Stream MP3 file, support Range header",
+                "produces": [
+                    "audio/mpeg"
+                ],
+                "tags": [
+                    "tracks"
+                ],
+                "summary": "Stream an audio track",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Track ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {

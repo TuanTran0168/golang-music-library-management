@@ -254,7 +254,7 @@ paths:
       summary: Update playlist
       tags:
       - Playlists
-  /playlists/stream/{id}.m3u:
+  /playlists/{id}/stream:
     get:
       description: Streams an M3U playlist file containing URLs to the MP3 tracks.
       parameters:
@@ -459,6 +459,27 @@ paths:
       summary: Update a track
       tags:
       - tracks
+  /tracks/{id}/stream:
+    get:
+      description: Stream MP3 file, support Range header
+      parameters:
+      - description: Track ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - audio/mpeg
+      responses:
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Stream an audio track
+      tags:
+      - tracks
   /tracks/search:
     get:
       description: Search tracks by query string
@@ -490,27 +511,6 @@ paths:
               type: string
             type: object
       summary: Search tracks
-      tags:
-      - tracks
-  /tracks/stream/{id}:
-    get:
-      description: Stream MP3 file, support Range header
-      parameters:
-      - description: Track ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - audio/mpeg
-      responses:
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Stream an audio track
       tags:
       - tracks
 securityDefinitions:
