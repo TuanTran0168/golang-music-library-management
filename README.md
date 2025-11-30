@@ -4,6 +4,7 @@ A clean architecture **Music Library Management** application built with **Golan
 It supports:  
 - **CRUD** operations for **tracks** and **playlists**  
 - **MP3 uploads** using **GridFS**  
+- **Image uploads** using **Cloudinary**  
 - **Search functionality**  
 - **Simple MP3 streaming**
 
