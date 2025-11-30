@@ -50,9 +50,9 @@ func (s *PlaylistService) DeletePlaylist(id string) error {
 
 // StreamPlaylistM3U generates the M3U content for a playlist using Extended M3U format.
 func (s *PlaylistService) StreamPlaylistM3U(id string, trackStreamBaseURL string) (string, error) {
-	id = id[:len(id)-4]
-	playlist, err := s.repo.GetPlaylistByID(id)
+	id = strings.TrimSuffix(id, ".m3u")
 
+	playlist, err := s.repo.GetPlaylistByID(id)
 	if err != nil {
 		return "", err
 	}
@@ -62,22 +62,20 @@ func (s *PlaylistService) StreamPlaylistM3U(id string, trackStreamBaseURL string
 		return "", fmt.Errorf("failed to retrieve tracks for playlist %s: %w", id, err)
 	}
 
-	// 2. Generate the M3U content (Extended M3U format)
 	var m3uContent strings.Builder
 	m3uContent.WriteString("#EXTM3U\n")
 
 	baseURL := strings.TrimRight(trackStreamBaseURL, "/")
 
-	fmt.Println("baseURL", baseURL)
-
 	for _, track := range tracks {
+
+		// EXTINF
 		m3uContent.WriteString(
 			fmt.Sprintf("#EXTINF:%d,%s - %s\n", track.Duration, track.Artist, track.Title),
 		)
 
-		trackURL := fmt.Sprintf("%s/%s", baseURL, track.ID.String())
+		trackURL := fmt.Sprintf("%s/%s/stream", baseURL, track.ID.Hex())
 
-		fmt.Println("trackURL: ", trackURL)
 		m3uContent.WriteString(trackURL + "\n")
 	}
 

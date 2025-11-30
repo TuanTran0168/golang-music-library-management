@@ -191,13 +191,13 @@ func (h *PlaylistHandler) DeletePlaylist(c *gin.Context) {
 // @Success      200  {string}  string  "M3U playlist content"
 // @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
-// @Router       /playlists/stream/{id}.m3u [get]
+// @Router       /playlists/{id}/stream [get]
 func (h *PlaylistHandler) StreamPlaylistM3U(c *gin.Context) {
 	playlistID := c.Param("id")
 
 	// The base path for the single track streaming endpoint.
-	// This must match the endpoint defined in your track routes (e.g., /api/v1/tracks/stream).
-	const trackStreamBaseURL = "/api/tracks/stream"
+	// This must match the endpoint defined in your track routes (e.g., /api/tracks/{id}/stream).
+	const trackStreamBaseURL = "/api/tracks"
 
 	fmt.Println("trackStreamBaseURL", trackStreamBaseURL)
 	m3uContent, err := h.service.StreamPlaylistM3U(playlistID, trackStreamBaseURL)
