@@ -24,6 +24,20 @@ export async function fetchTracksFromPlaylist(playlist: Playlist): Promise<Track
   );
 }
 
+export async function fetchAllTracks(): Promise<Track[]> {
+  const res = await api.get<Paginated<Track>>("/tracks", {
+    params: { page: 1, limit: 1000 },
+  });
+  return res.data.data || [];
+}
+
+export async function searchTracks(query: string): Promise<Track[]> {
+    const res = await api.get<Paginated<Track>>("/tracks/search", {
+        params: { q: query, page: 1, limit: 100 },
+    });
+    return res.data.data || [];
+}
+
 // ----------------- Stream URL -----------------
 export function getStreamURL(track: Track): string {
   return `${API_BASE}/tracks/${track.id}/stream`;

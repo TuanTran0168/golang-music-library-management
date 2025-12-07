@@ -21,9 +21,22 @@ export default function Player({ track }: Props) {
   if (!track) return null;
 
   return (
-    <div className="p-4 border-t border-gray-300">
-      <h3 className="font-bold">{track.title} - {track.artist}</h3>
-      <audio ref={audioRef} controls className="w-full mt-2" />
+    <div className="flex items-center justify-between p-3">
+      <div className="flex-1 min-w-0 pr-4">
+        <h3 className="font-semibold text-white truncate">{track.title}</h3>
+        <p className="text-sm text-gray-400 truncate">{track.artist}</p>
+      </div>
+
+      <div className="flex-grow max-w-lg">
+        <audio 
+          ref={audioRef} 
+          controls 
+          className="w-full h-10" 
+        />
+      </div>
+
+      <div className="flex-1 flex justify-end">
+      </div>
     </div>
   );
 }
