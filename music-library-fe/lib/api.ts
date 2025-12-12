@@ -3,7 +3,6 @@ import { Playlist, Track, Paginated } from "@/types/music";
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
 
-// Axios instance
 const api = axios.create({
   baseURL: API_BASE,
 });
@@ -12,6 +11,20 @@ const api = axios.create({
 export async function fetchPlaylists(): Promise<Playlist[]> {
   const res = await api.get<Paginated<Playlist>>("/playlists");
   return res.data.data || [];
+}
+
+export async function createPlaylist(formData: FormData): Promise<Playlist> {
+  const res = await api.post<Playlist>("/playlists", formData);
+  return res.data;
+}
+
+export async function updatePlaylistTracks(playlistId: string, formData: FormData): Promise<Playlist> {
+  const res = await api.patch<Playlist>(`/playlists/${playlistId}/tracks`, formData);
+  return res.data;
+}
+
+export async function deletePlaylist(id: string): Promise<void> {
+  await api.delete(`/playlists/${id}`);
 }
 
 // ----------------- Tracks -----------------
@@ -36,6 +49,10 @@ export async function searchTracks(query: string): Promise<Track[]> {
         params: { q: query, page: 1, limit: 100 },
     });
     return res.data.data || [];
+}
+
+export async function deleteTrack(id: string): Promise<void> {
+  await api.delete(`/tracks/${id}`);
 }
 
 // ----------------- Stream URL -----------------

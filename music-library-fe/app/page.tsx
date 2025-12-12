@@ -26,10 +26,15 @@ export default function Home() {
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   
-  // State for search functionality (only used when selectedPlaylist is null)
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedQuery = useDebounce(searchQuery, 300);
   const [activeView, setActiveView] = useState<'all' | string>('all'); 
+  
+  const [playlistRefetchKey, setPlaylistRefetchKey] = useState(0); 
+
+  const refetchPlaylists = () => {
+    setPlaylistRefetchKey(prev => prev + 1);
+  };
 
   const handleSidebarSelect = (playlist: Playlist | null) => {
     setSelectedPlaylist(playlist);
@@ -45,6 +50,8 @@ export default function Home() {
           onSelect={handleSidebarSelect} 
           activeView={activeView} 
           setActiveView={setActiveView} 
+          refetchKey={playlistRefetchKey}
+          refetchPlaylists={refetchPlaylists}
         />
         <main className="flex flex-col flex-1 overflow-auto">
           <TrackList 
@@ -53,6 +60,7 @@ export default function Home() {
             searchQuery={searchQuery}
             debouncedQuery={debouncedQuery}
             setSearchQuery={setSearchQuery}
+            refetchPlaylists={refetchPlaylists}
           />
         </main>
       </div>
