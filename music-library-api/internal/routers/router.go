@@ -10,6 +10,7 @@ import (
 func NewRouter(
 	trackHandler *handlers.TrackHandler,
 	playlistHandler *handlers.PlaylistHandler,
+	userHandler *handlers.UserHandler,
 ) *gin.Engine {
 	r := gin.Default()
 	r.Use(middlewares.CORSMiddleware())
@@ -18,6 +19,7 @@ func NewRouter(
 
 	RegisterTrackRoutes(api, trackHandler)
 	RegisterPlaylistRoutes(api, playlistHandler)
+	RegisterUserRoutes(api, userHandler)
 
 	return r
 }

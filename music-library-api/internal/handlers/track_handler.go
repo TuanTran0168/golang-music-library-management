@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/hajimehoshi/go-mp3"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -104,6 +105,13 @@ func (h *TrackHandler) GetTrackByID(c *gin.Context) {
 // @Failure      500    {object} map[string]string
 // @Router       /tracks [post]
 func (h *TrackHandler) CreateTrack(c *gin.Context) {
+	// require musician role to upload
+	role := c.GetHeader("X-User-Role")
+	if role == "" || role != string(models.RoleMusician) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "only musician role can upload tracks"})
+		return
+	}
+
 	var req dto.TrackCreateRequest
 
 	if err := c.ShouldBind(&req); err != nil {
@@ -146,6 +154,14 @@ func (h *TrackHandler) CreateTrack(c *gin.Context) {
 		ReleaseYear: req.ReleaseYear,
 		Duration:    duration,
 		FileID:      gridFSID,
+	}
+
+	// set owner if provided
+	userID := c.GetHeader("X-User-ID")
+	if userID != "" {
+		if oid, err := primitive.ObjectIDFromHex(userID); err == nil {
+			track.OwnerID = oid
+		}
 	}
 
 	if err := h.service.CreateTrack(track); err != nil {
