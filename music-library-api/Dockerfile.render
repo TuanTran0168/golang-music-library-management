@@ -1,0 +1,30 @@
+# ---------- Stage 1: Build ----------
+FROM golang:1.25-alpine AS builder
+
+WORKDIR /music_api
+
+RUN apk add --no-cache git bash curl
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . ./
+
+# Build binary
+RUN go build -o /music_api/bin/music_api ./cmd/main.go
+
+# ---------- Stage 2: Production ----------
+FROM alpine:3.18
+
+WORKDIR /music_api
+
+RUN apk add --no-cache ca-certificates bash
+
+COPY --from=builder /music_api/bin/music_api ./music_api
+COPY ./uploads ./uploads
+COPY .env.prod .env.prod
+ENV ENV=prod
+
+EXPOSE 8080
+
+ENTRYPOINT ["./music_api"]
