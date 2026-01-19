@@ -22,7 +22,7 @@ import (
 // @title Music Library API
 // @version 1.0
 // @description Clean architecture Music Library API with Golang (Gin) + MongoDB, featuring CRUD, MP3 uploads, search, and basic MP3 streaming.
-// @host localhost:8080
+// @host
 // @BasePath /api
 // @securityDefinitions.apikey BearerAuth
 // @in header
