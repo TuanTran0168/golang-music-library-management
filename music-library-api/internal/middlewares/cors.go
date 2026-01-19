@@ -12,7 +12,7 @@ func CORSMiddleware() gin.HandlerFunc {
 		AllowOrigins: []string{
 			"http://localhost:3000",
 			"http://172.17.144.1:3000",
-			"https://golang-music-library-management.onrender.com",
+			"https://golang-music-library-management.vercel.app",
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
