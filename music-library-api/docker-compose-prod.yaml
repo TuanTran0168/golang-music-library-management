@@ -3,41 +3,41 @@ version: "3.9"
 services:
   mongo_db:
     image: mongo:7.0
-    container_name: music_mongo_dev
+    container_name: music_mongo_prod
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: Admin@123
       MONGO_INITDB_DATABASE: music_library
     ports:
-      - "27017:27017"
+      - "27027:27017"
     volumes:
-      - mongo_data:/data/db
+      - mongo_data_prod:/data/db
       - ./backups:/dump
     networks:
-      - music_network
+      - music_network_prod
 
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    image: music_app:dev
-    container_name: music_api_dev
+    image: music_app:prod
+    container_name: music_api_prod
     ports:
       - "8080:8080"
     depends_on:
       - mongo_db
     env_file:
-      - .env.local
+      - .env.prod
     environment:
-      ENV: "dev"
+      ENV: "prod"
     networks:
-      - music_network
+      - music_network_prod
 
 volumes:
-  mongo_data:
+  mongo_data_prod:
 
 
 networks:
-  music_network:
+  music_network_prod:
     driver: bridge
