@@ -3,16 +3,17 @@ package handlers
 import (
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"music-library-api/internal/dto"
 	"music-library-api/internal/mappers"
 	"music-library-api/internal/models"
 	"music-library-api/internal/services"
+	"music-library-api/pkg/constants"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hajimehoshi/go-mp3"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -40,14 +41,25 @@ func NewTrackHandler(service services.ITrackService, mongodb *mongo.Database) *T
 // @Failure      500    {object}  map[string]string
 // @Router       /tracks [get]
 func (h *TrackHandler) GetTracks(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	page, limit := constants.ParsePagination(c.Query("page"), c.Query("limit"))
 
-	list, err := h.service.GetTracks(page, limit)
+	uid := ""
+	if c.Query("myTracks") == "true" {
+		userID, exists := c.Get("user_id")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			return
+		}
+		uid = userID.(string)
+	}
+
+	list, err := h.service.GetTracks(page, limit, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	totalCount, _ := h.service.CountTracks(uid)
 
 	resp := make([]dto.TrackResponse, 0)
 	for _, t := range list {
@@ -55,9 +67,10 @@ func (h *TrackHandler) GetTracks(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.TrackListResponse{
-		Page:  page,
-		Limit: limit,
-		Data:  resp,
+		Page:       page,
+		Limit:      limit,
+		TotalCount: totalCount,
+		Data:       resp,
 	})
 }
 
@@ -102,6 +115,7 @@ func (h *TrackHandler) GetTrackByID(c *gin.Context) {
 // @Success      201    {object} dto.TrackResponse
 // @Failure      400    {object} map[string]string
 // @Failure      500    {object} map[string]string
+// @Security     BearerAuth
 // @Router       /tracks [post]
 func (h *TrackHandler) CreateTrack(c *gin.Context) {
 	var req dto.TrackCreateRequest
@@ -138,7 +152,20 @@ func (h *TrackHandler) CreateTrack(c *gin.Context) {
 
 	duration := int(float64(decoder.Length()/4) / float64(decoder.SampleRate()))
 
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	userIDObj, err := primitive.ObjectIDFromHex(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id"})
+		return
+	}
+
 	track := &models.Track{
+		UserID:      userIDObj,
 		Title:       req.File.Filename,
 		Artist:      req.Artist,
 		Album:       req.Album,
@@ -168,6 +195,7 @@ func (h *TrackHandler) CreateTrack(c *gin.Context) {
 // @Failure      400    {object}  map[string]string
 // @Failure      404    {object}  map[string]string
 // @Failure      500    {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /tracks/{id} [patch]
 func (h *TrackHandler) UpdateTrack(c *gin.Context) {
 	id := c.Param("id")
@@ -175,6 +203,14 @@ func (h *TrackHandler) UpdateTrack(c *gin.Context) {
 	track, err := h.service.GetTrackByID(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "track not found"})
+		return
+	}
+
+	// Ownership check
+	userID, _ := c.Get("user_id")
+	role, _ := c.Get("role")
+	if role != "admin" && track.UserID.Hex() != userID.(string) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "you can only update your own tracks"})
 		return
 	}
 
@@ -208,6 +244,7 @@ func (h *TrackHandler) UpdateTrack(c *gin.Context) {
 // @Success      204    "No Content"
 // @Failure      404    {object}  map[string]string
 // @Failure      500    {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /tracks/{id} [delete]
 func (h *TrackHandler) DeleteTrack(c *gin.Context) {
 	id := c.Param("id")
@@ -215,6 +252,14 @@ func (h *TrackHandler) DeleteTrack(c *gin.Context) {
 	track, err := h.service.GetTrackByID(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "track not found"})
+		return
+	}
+
+	// Ownership check
+	userID, _ := c.Get("user_id")
+	role, _ := c.Get("role")
+	if role != "admin" && track.UserID.Hex() != userID.(string) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "you can only delete your own tracks"})
 		return
 	}
 
@@ -239,14 +284,25 @@ func (h *TrackHandler) DeleteTrack(c *gin.Context) {
 // @Router       /tracks/search [get]
 func (h *TrackHandler) SearchTracks(c *gin.Context) {
 	query := c.Query("q")
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	page, limit := constants.ParsePagination(c.Query("page"), c.Query("limit"))
 
-	list, err := h.service.SearchTracks(query, page, limit)
+	uid := ""
+	if c.Query("myTracks") == "true" {
+		userID, exists := c.Get("user_id")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			return
+		}
+		uid = userID.(string)
+	}
+
+	list, err := h.service.SearchTracks(query, page, limit, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	totalCount, _ := h.service.CountSearchTracks(query, uid)
 
 	resp := make([]dto.TrackResponse, 0)
 	for _, t := range list {
@@ -254,9 +310,10 @@ func (h *TrackHandler) SearchTracks(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.TrackListResponse{
-		Page:  page,
-		Limit: limit,
-		Data:  resp,
+		Page:       page,
+		Limit:      limit,
+		TotalCount: totalCount,
+		Data:       resp,
 	})
 }
 

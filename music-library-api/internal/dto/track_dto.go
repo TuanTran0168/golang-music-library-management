@@ -33,11 +33,12 @@ type TrackResponse struct {
 	ReleaseYear int    `json:"release_year"`
 	Duration    int    `json:"duration"`
 	FileID      string `json:"file_id"`
-	// PlaylistID  string `json:"playlist_id"`
+	UserID      string `json:"user_id"`
 }
 
 type TrackListResponse struct {
-	Page  int             `json:"page"`
-	Limit int             `json:"limit"`
-	Data  []TrackResponse `json:"data"`
+	Page       int             `json:"page"`
+	Limit      int             `json:"limit"`
+	TotalCount int64           `json:"total_count"`
+	Data       []TrackResponse `json:"data"`
 }

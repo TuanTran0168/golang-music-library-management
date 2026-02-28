@@ -17,6 +17,13 @@ type Config struct {
 	CloudName string
 	APIKey    string
 	APISecret string
+
+	// JWT
+	JWTSecret     string
+	JWTExpiration string // e.g., "72h"
+
+	// Admin
+	AdminRoleKey string
 }
 
 func LoadConfig() *Config {
@@ -38,12 +45,15 @@ func LoadConfig() *Config {
 	log.Println("=================================================================")
 
 	return &Config{
-		MongoURI:  os.Getenv("MONGO_URI"),
-		DBName:    os.Getenv("DB_NAME"),
-		HTTPPort:  os.Getenv("HTTP_PORT"),
-		CloudName: os.Getenv("CLOUDINARY_CLOUD_NAME"),
-		APIKey:    os.Getenv("CLOUDINARY_API_KEY"),
-		APISecret: os.Getenv("CLOUDINARY_API_SECRET"),
-		Env:       env,
+		MongoURI:      os.Getenv("MONGO_URI"),
+		DBName:        os.Getenv("DB_NAME"),
+		HTTPPort:      os.Getenv("HTTP_PORT"),
+		CloudName:     os.Getenv("CLOUDINARY_CLOUD_NAME"),
+		APIKey:        os.Getenv("CLOUDINARY_API_KEY"),
+		APISecret:     os.Getenv("CLOUDINARY_API_SECRET"),
+		Env:           env,
+		JWTSecret:     os.Getenv("JWT_SECRET"),
+		JWTExpiration: os.Getenv("JWT_EXPIRATION"),
+		AdminRoleKey:  os.Getenv("ADMIN_ROLE_KEY"),
 	}
 }
