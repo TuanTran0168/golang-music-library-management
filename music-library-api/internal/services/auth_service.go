@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	config "music-library-api/configs"
 	"music-library-api/internal/dto"
 	"music-library-api/internal/models"
@@ -40,6 +41,8 @@ func (s *authService) Register(req *dto.RegisterRequest) (*dto.AuthResponse, err
 	}
 
 	role := models.RoleUser
+	fmt.Println(req.RoleKey)
+	fmt.Println(s.cfg.AdminRoleKey)
 	if req.RoleKey != "" && req.RoleKey == s.cfg.AdminRoleKey {
 		role = models.RoleAdmin
 	}

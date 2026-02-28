@@ -15,6 +15,7 @@ import (
 type IPlaylistService interface {
 	GetPlaylistByID(id string) (*models.Playlist, error)
 	GetPlaylists(page, limit int, userID string) ([]*models.Playlist, error)
+	CountPlaylists(userID string) (int64, error)
 	CreatePlaylist(playlist *models.Playlist) (*models.Playlist, error)
 	UpdatePlaylist(playlist *models.Playlist) (*models.Playlist, error)
 	DeletePlaylist(id string) error
@@ -43,6 +44,10 @@ func (s *PlaylistService) GetPlaylistByID(id string) (*models.Playlist, error) {
 
 func (s *PlaylistService) GetPlaylists(page, limit int, userID string) ([]*models.Playlist, error) {
 	return s.repo.GetPlaylists(page, limit, userID)
+}
+
+func (s *PlaylistService) CountPlaylists(userID string) (int64, error) {
+	return s.repo.CountPlaylists(userID)
 }
 
 func (s *PlaylistService) CreatePlaylist(playlist *models.Playlist) (*models.Playlist, error) {
@@ -182,29 +187,36 @@ func (s *PlaylistService) UpdatePlaylistFormData(id string, req *dto.UpdatePlayl
 		pl.AlbumCover = url
 	}
 
-	if len(req.TrackIDs) > 0 {
+	// Handle track_ids update
+	if req.Mode == dto.ModeOverwrite {
+		// Overwrite mode: replace entirely (even with empty list)
+		if len(req.TrackIDs) == 0 {
+			pl.TrackIDs = nil
+		} else {
+			newIDs, err := s.validateTrackIDs(req.TrackIDs)
+			if err != nil {
+				return nil, err
+			}
+			pl.TrackIDs = newIDs
+		}
+	} else if len(req.TrackIDs) > 0 {
+		// Append mode: merge new IDs with existing
 		newIDs, err := s.validateTrackIDs(req.TrackIDs)
 		if err != nil {
 			return nil, err
 		}
-
-		switch req.Mode {
-		case dto.ModeAppend:
-			var existingIDs []string
-			for _, id := range pl.TrackIDs {
-				existingIDs = append(existingIDs, id.Hex())
-			}
-			var combined []string
-			for _, id := range newIDs {
-				combined = append(combined, id.Hex())
-			}
-			combined = utils.UniqueStrings(append(existingIDs, combined...))
-			pl.TrackIDs, err = utils.ConvertToObjectIDs(combined)
-			if err != nil {
-				return nil, fmt.Errorf("invalid track IDs after append: %w", err)
-			}
-		default: // overwrite
-			pl.TrackIDs = newIDs
+		var existingIDs []string
+		for _, id := range pl.TrackIDs {
+			existingIDs = append(existingIDs, id.Hex())
+		}
+		var combined []string
+		for _, id := range newIDs {
+			combined = append(combined, id.Hex())
+		}
+		combined = utils.UniqueStrings(append(existingIDs, combined...))
+		pl.TrackIDs, err = utils.ConvertToObjectIDs(combined)
+		if err != nil {
+			return nil, fmt.Errorf("invalid track IDs after append: %w", err)
 		}
 	}
 

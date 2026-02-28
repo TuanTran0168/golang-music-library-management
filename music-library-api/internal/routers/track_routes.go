@@ -13,9 +13,9 @@ func RegisterTrackRoutes(rg *gin.RouterGroup, handler *handlers.TrackHandler, cf
 	tracks := rg.Group("/tracks")
 	{
 		tracks.GET("/:id", handler.GetTrackByID)
-		tracks.GET("/search", handler.SearchTracks)
+		tracks.GET("/search", middlewares.OptionalAuthMiddleware(cfg), handler.SearchTracks)
 		tracks.GET("/:id/stream", handler.StreamTrack)
-		tracks.GET("", handler.GetTracks)
+		tracks.GET("", middlewares.OptionalAuthMiddleware(cfg), handler.GetTracks)
 
 		protected := tracks.Group("")
 		protected.Use(middlewares.AuthMiddleware(cfg))

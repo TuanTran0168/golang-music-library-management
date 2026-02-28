@@ -63,6 +63,8 @@ definitions:
         type: integer
       page:
         type: integer
+      total_count:
+        type: integer
     type: object
   dto.TrackResponse:
     properties:

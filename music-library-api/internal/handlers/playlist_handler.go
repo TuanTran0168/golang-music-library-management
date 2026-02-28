@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"music-library-api/internal/dto"
 	"music-library-api/internal/mappers"
 	"music-library-api/internal/services"
+	"music-library-api/pkg/constants"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -33,8 +33,7 @@ func NewPlaylistHandler(service services.IPlaylistService) *PlaylistHandler {
 // @Success      200 {object} map[string]interface{}
 // @Router       /playlists [get]
 func (h *PlaylistHandler) GetPlaylists(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	page, limit := constants.ParsePagination(c.Query("page"), c.Query("limit"))
 
 	userID, exists := c.Get("user_id")
 	uid := ""
@@ -48,16 +47,18 @@ func (h *PlaylistHandler) GetPlaylists(c *gin.Context) {
 		return
 	}
 
+	totalCount, _ := h.service.CountPlaylists(uid)
+
 	resp := make([]dto.PlaylistResponse, len(playlists))
 	for i, p := range playlists {
 		resp[i] = mappers.ToPlaylistResponse(p)
-		mappers.ToPlaylistResponse(p)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"page":  page,
-		"limit": limit,
-		"data":  resp,
+		"page":        page,
+		"limit":       limit,
+		"total_count": totalCount,
+		"data":        resp,
 	})
 }
 
@@ -142,6 +143,19 @@ func (h *PlaylistHandler) UpdatePlaylist(c *gin.Context) {
 		return
 	}
 
+	// Ownership check: only owner or admin can update
+	userID, _ := c.Get("user_id")
+	role, _ := c.Get("role")
+	pl, err := h.service.GetPlaylistByID(idStr)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "playlist not found"})
+		return
+	}
+	if role != "admin" && pl.UserID.Hex() != userID.(string) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "you can only update your own playlists"})
+		return
+	}
+
 	// Gọi service update, service sẽ handle upload file + trackIDs
 	updatedPlaylist, err := h.service.UpdatePlaylistFormData(idStr, &req)
 	if err != nil {
@@ -168,6 +182,19 @@ func (h *PlaylistHandler) UpdatePlaylist(c *gin.Context) {
 // @Router       /playlists/{id} [delete]
 func (h *PlaylistHandler) DeletePlaylist(c *gin.Context) {
 	idStr := c.Param("id")
+
+	// Ownership check: only owner or admin can delete
+	userID, _ := c.Get("user_id")
+	role, _ := c.Get("role")
+	pl, err := h.service.GetPlaylistByID(idStr)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "playlist not found"})
+		return
+	}
+	if role != "admin" && pl.UserID.Hex() != userID.(string) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "you can only delete your own playlists"})
+		return
+	}
 
 	if err := h.service.DeletePlaylist(idStr); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

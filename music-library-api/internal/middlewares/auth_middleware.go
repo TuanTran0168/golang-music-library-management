@@ -47,6 +47,39 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 	}
 }
 
+// OptionalAuthMiddleware tries to parse JWT but does NOT abort if missing/invalid.
+// It sets user_id and role in context only if a valid token is present.
+func OptionalAuthMiddleware(cfg *config.Config) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.Next()
+			return
+		}
+
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			c.Next()
+			return
+		}
+
+		secret := cfg.JWTSecret
+		if secret == "" {
+			secret = "default-secret"
+		}
+
+		claims, err := utils.ValidateJWT(parts[1], secret)
+		if err != nil {
+			c.Next()
+			return
+		}
+
+		c.Set("user_id", claims.UserID)
+		c.Set("role", claims.Role)
+		c.Next()
+	}
+}
+
 // RequireRoles checks if the user has one of the allowed roles
 func RequireRoles(allowedRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {

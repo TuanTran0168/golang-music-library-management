@@ -1005,6 +1005,9 @@ const docTemplate = `{
                 },
                 "page": {
                     "type": "integer"
+                },
+                "total_count": {
+                    "type": "integer"
                 }
             }
         },

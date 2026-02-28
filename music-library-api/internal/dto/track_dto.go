@@ -37,7 +37,8 @@ type TrackResponse struct {
 }
 
 type TrackListResponse struct {
-	Page  int             `json:"page"`
-	Limit int             `json:"limit"`
-	Data  []TrackResponse `json:"data"`
+	Page       int             `json:"page"`
+	Limit      int             `json:"limit"`
+	TotalCount int64           `json:"total_count"`
+	Data       []TrackResponse `json:"data"`
 }

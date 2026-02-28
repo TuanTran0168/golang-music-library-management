@@ -13,6 +13,7 @@ import (
 type IPlaylistRepository interface {
 	GetPlaylistByID(id string) (*models.Playlist, error)
 	GetPlaylists(page, limit int, userID string) ([]*models.Playlist, error)
+	CountPlaylists(userID string) (int64, error)
 	CreatePlaylist(playlist *models.Playlist) (*models.Playlist, error)
 	UpdatePlaylist(playlist *models.Playlist) (*models.Playlist, error)
 	DeletePlaylist(id string) error
@@ -53,6 +54,17 @@ func (r *playlistRepository) GetPlaylists(page, limit int, userID string) ([]*mo
 		return nil, err
 	}
 	return playlists, nil
+}
+
+func (r *playlistRepository) CountPlaylists(userID string) (int64, error) {
+	filter := bson.M{}
+	if userID != "" {
+		objID, err := primitive.ObjectIDFromHex(userID)
+		if err == nil {
+			filter["user_id"] = objID
+		}
+	}
+	return mgm.Coll(&models.Playlist{}).CountDocuments(context.Background(), filter)
 }
 
 func (r *playlistRepository) CreatePlaylist(playlist *models.Playlist) (*models.Playlist, error) {

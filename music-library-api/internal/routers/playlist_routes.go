@@ -11,8 +11,8 @@ import (
 func RegisterPlaylistRoutes(rg *gin.RouterGroup, handler *handlers.PlaylistHandler, cfg *configs.Config) {
 	playlists := rg.Group("/playlists")
 	{
-		// Public routes
-		playlists.GET("", handler.GetPlaylists)
+		// Public routes (with optional auth for user-scoped filtering)
+		playlists.GET("", middlewares.OptionalAuthMiddleware(cfg), handler.GetPlaylists)
 		playlists.GET("/:id", handler.GetPlaylistByID)
 		playlists.GET("/:id/stream", handler.StreamPlaylistM3U)
 

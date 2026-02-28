@@ -19,7 +19,7 @@ type UpdatePlaylistRequest struct {
 	Title      string                `form:"title"`
 	AlbumCover *multipart.FileHeader `form:"album_cover"`
 	TrackIDs   []string              `form:"track_ids"`
-	Mode       PlaylistUpdateMode    `form:"mode" binding:"required,oneof=overwrite append"`
+	Mode       PlaylistUpdateMode    `form:"mode" binding:"omitempty,oneof=overwrite append"`
 }
 
 type PlaylistResponse struct {
