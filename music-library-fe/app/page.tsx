@@ -73,6 +73,7 @@ export default function Home() {
             refetchPlaylists={refetchPlaylists}
             canUpload={canUpload}
             canManagePlaylists={canManagePlaylists}
+            onSidebarToggle={() => setSidebarOpen(true)}
           />
         </main>
       </div>

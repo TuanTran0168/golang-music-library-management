@@ -16,12 +16,16 @@ export default function RoleGuard({ roles, children, fallback }: Props) {
 
     useEffect(() => {
         if (!isLoggedIn()) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setAllowed(false);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setChecked(true);
             return;
         }
         const user = getUser();
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setAllowed(!!user && roles.includes(user.role));
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setChecked(true);
     }, [roles]);
 

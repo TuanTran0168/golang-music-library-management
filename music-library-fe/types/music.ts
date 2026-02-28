@@ -1,6 +1,7 @@
 // ----------------- Playlist -----------------
 export interface Playlist {
   id: string;
+  user_id: string;
   title: string;
   album_cover: string;
   track_ids: string[];
@@ -11,6 +12,7 @@ export interface Playlist {
 // ----------------- Track -----------------
 export interface Track {
   id: string;
+  user_id: string;
   title: string;
   artist: string;
   album: string;

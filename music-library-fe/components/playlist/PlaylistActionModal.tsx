@@ -21,7 +21,7 @@ export default function PlaylistActionModal({ selectedTrackIds, onSuccess, onCan
   const [updateMode, setUpdateMode] = useState<"append" | "overwrite">("append");
 
   useEffect(() => {
-    fetchPlaylists().then(setPlaylists).finally(() => setLoading(false));
+    fetchPlaylists(1, 100, true).then(setPlaylists).finally(() => setLoading(false));
   }, []);
 
   const tracksCount = selectedTrackIds.length;
@@ -112,8 +112,8 @@ export default function PlaylistActionModal({ selectedTrackIds, onSuccess, onCan
                         type="button"
                         onClick={() => setSelectedPlaylistId(p.id)}
                         className={`w-full text-left px-4 py-3 text-sm transition flex items-center justify-between border-b border-white/5 last:border-0 ${selectedPlaylistId === p.id
-                            ? "bg-purple-500/20 text-white"
-                            : "text-gray-300 hover:bg-white/5"
+                          ? "bg-purple-500/20 text-white"
+                          : "text-gray-300 hover:bg-white/5"
                           }`}
                       >
                         <span className="truncate">🎶 {p.title}</span>

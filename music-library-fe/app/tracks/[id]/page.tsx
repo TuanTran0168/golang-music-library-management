@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { Navbar } from "@/components/layout";
 import { RoleGuard } from "@/components/auth";
 import { ConfirmModal } from "@/components/common";
 import { fetchTrackById, updateTrack, deleteTrack } from "@/lib/api";
 import { Track } from "@/types/music";
+import { getUser } from "@/lib/auth";
 
 export default function TrackDetailPage() {
     return (
@@ -22,11 +23,13 @@ export default function TrackDetailPage() {
 }
 
 function TrackEditor() {
-    const params = require("next/navigation").useParams();
+    const params = useParams();
     const router = useRouter();
     const id = params.id as string;
+    const user = getUser();
 
     const [track, setTrack] = useState<Track | null>(null);
+    const isOwnerOrAdmin = user?.role === "admin" || String(user?.id) === String(track?.user_id);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
@@ -139,10 +142,21 @@ function TrackEditor() {
                         </div>
 
                         <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                            <button type="button" onClick={() => setShowDeleteModal(true)} className="text-sm px-4 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition">
+                            <button
+                                type="button"
+                                onClick={() => isOwnerOrAdmin && setShowDeleteModal(true)}
+                                disabled={!isOwnerOrAdmin}
+                                className={`text-sm px-4 py-2 rounded-lg transition ${isOwnerOrAdmin ? "bg-red-500/10 text-red-400 hover:bg-red-500/20" : "bg-gray-500/10 text-gray-500 opacity-50 cursor-not-allowed"}`}
+                                title={!isOwnerOrAdmin ? "No permission to delete" : "Delete Track"}
+                            >
                                 🗑️ Delete Track
                             </button>
-                            <button type="submit" disabled={saving} className="btn-accent text-sm !py-2 !px-6">
+                            <button
+                                type="submit"
+                                disabled={saving || !isOwnerOrAdmin}
+                                className={`text-sm !py-2 !px-6 transition ${isOwnerOrAdmin ? "btn-accent" : "bg-gray-500/10 text-gray-400 opacity-50 cursor-not-allowed rounded-lg"}`}
+                                title={!isOwnerOrAdmin ? "No permission to edit" : "Save Changes"}
+                            >
                                 {saving ? "Saving..." : "💾 Save Changes"}
                             </button>
                         </div>

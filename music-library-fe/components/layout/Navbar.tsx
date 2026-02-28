@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { User } from "@/types/auth";
-import { getUser, logout, isLoggedIn } from "@/lib/auth";
+import { getUser, logout } from "@/lib/auth";
 import { AuthModal } from "@/components/auth";
 
 export default function Navbar() {
@@ -13,6 +13,7 @@ export default function Navbar() {
     const [showAuth, setShowAuth] = useState(false);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setUser(getUser());
     }, []);
 
@@ -28,7 +29,7 @@ export default function Navbar() {
     };
 
     const navLinks = [];
-    if (user && (user.role === "admin" || user.role === "artist")) {
+    if (user) {
         navLinks.push({ href: "/artist", label: "🎤 Studio" });
     }
     if (user && user.role === "admin") {

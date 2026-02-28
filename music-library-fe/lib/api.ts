@@ -19,10 +19,11 @@ api.interceptors.request.use((config) => {
 });
 
 // ----------------- Playlists -----------------
-export async function fetchPlaylists(page = 1, limit = 50): Promise<Playlist[]> {
-  const res = await api.get<Paginated<Playlist>>("/playlists", {
-    params: { page, limit },
-  });
+export async function fetchPlaylists(page = 1, limit = 50, myPlaylists?: boolean): Promise<Playlist[]> {
+  const params: Record<string, string | number | boolean> = { page, limit };
+  if (myPlaylists) params.myPlaylists = true;
+
+  const res = await api.get<Paginated<Playlist>>("/playlists", { params });
   return res.data.data || [];
 }
 
@@ -51,16 +52,16 @@ export async function fetchTracksFromPlaylist(playlist: Playlist): Promise<Track
 }
 
 export async function fetchTracks(page = 1, limit = DEFAULT_PAGE_SIZE, myTracks?: boolean): Promise<Paginated<Track>> {
-  const params: any = { page, limit };
-  if (myTracks) params.myTracks = "true";
+  const params: Record<string, string | number | boolean> = { page, limit };
+  if (myTracks) params.myTracks = true;
 
   const res = await api.get<Paginated<Track>>("/tracks", { params });
   return res.data;
 }
 
 export async function searchTracks(query: string, page = 1, limit = DEFAULT_PAGE_SIZE, myTracks?: boolean): Promise<Paginated<Track>> {
-  const params: any = { q: query, page, limit };
-  if (myTracks) params.myTracks = "true";
+  const params: Record<string, string | number | boolean> = { q: query, page, limit };
+  if (myTracks) params.myTracks = true;
 
   const res = await api.get<Paginated<Track>>("/tracks/search", { params });
   return res.data;

@@ -7,8 +7,9 @@ import { Navbar } from "@/components/layout";
 import { RoleGuard } from "@/components/auth";
 import { UploadTrack } from "@/components/track";
 import { ConfirmModal } from "@/components/common";
-import { fetchTracks, deleteTrack, fetchPlaylists, createPlaylist, deletePlaylist, DEFAULT_PAGE_SIZE } from "@/lib/api";
 import { Track, Playlist, Paginated } from "@/types/music";
+import { fetchTracks, deleteTrack, fetchPlaylists, createPlaylist, deletePlaylist, DEFAULT_PAGE_SIZE } from "@/lib/api";
+import { getUser } from "@/lib/auth";
 
 const formatDuration = (s: number) => {
     if (isNaN(s) || s < 0) return "0:00";
@@ -19,7 +20,7 @@ export default function ArtistPage() {
     return (
         <div className="flex flex-col h-screen">
             <Navbar />
-            <RoleGuard roles={["admin", "artist"]}>
+            <RoleGuard roles={["admin", "artist", "user"]}>
                 <ArtistDashboard />
             </RoleGuard>
         </div>
@@ -27,7 +28,8 @@ export default function ArtistPage() {
 }
 
 function ArtistDashboard() {
-    const [tab, setTab] = useState<"tracks" | "playlists">("tracks");
+    const user = getUser();
+    const [tab, setTab] = useState<"tracks" | "playlists">(user?.role === "user" ? "playlists" : "tracks");
     const [tracks, setTracks] = useState<Track[]>([]);
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
     const [loading, setLoading] = useState(true);
@@ -56,7 +58,7 @@ function ArtistDashboard() {
                 })
                 .finally(() => setLoading(false));
         } else {
-            fetchPlaylists()
+            fetchPlaylists(1, 100, true)
                 .then((pls) => {
                     setPlaylists(pls);
                     setTotalCount(pls.length);
@@ -125,9 +127,11 @@ function ArtistDashboard() {
 
                     {/* Tab Toggle */}
                     <div className="flex gap-2 mb-6 p-1 rounded-xl max-w-xs" style={{ background: "rgba(255,255,255,0.05)" }}>
-                        <button onClick={() => setTab("tracks")} className={`flex-1 py-2 rounded-lg text-sm font-semibold transition ${tab === "tracks" ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow" : "text-gray-400 hover:text-white"}`}>
-                            🎵 Tracks
-                        </button>
+                        {user?.role !== "user" && (
+                            <button onClick={() => setTab("tracks")} className={`flex-1 py-2 rounded-lg text-sm font-semibold transition ${tab === "tracks" ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow" : "text-gray-400 hover:text-white"}`}>
+                                🎵 Tracks
+                            </button>
+                        )}
                         <button onClick={() => setTab("playlists")} className={`flex-1 py-2 rounded-lg text-sm font-semibold transition ${tab === "playlists" ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow" : "text-gray-400 hover:text-white"}`}>
                             🎶 Playlists
                         </button>
@@ -208,7 +212,7 @@ function ArtistDashboard() {
                 </div>
             </div>
 
-            {tab === "tracks" && <UploadTrack onUploadSuccess={() => setRefetchKey((k) => k + 1)} />}
+            {tab === "tracks" && user?.role !== "user" && <UploadTrack onUploadSuccess={() => setRefetchKey((k) => k + 1)} />}
 
             {/* Delete Confirmation Modal */}
             {deleteTarget && (

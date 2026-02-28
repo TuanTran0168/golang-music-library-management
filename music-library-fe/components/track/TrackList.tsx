@@ -16,6 +16,7 @@ interface Props {
   canUpload: boolean;
   canManagePlaylists: boolean;
   myTracks?: boolean;
+  onSidebarToggle?: () => void;
 }
 
 const formatDuration = (seconds: number): string => {
@@ -35,6 +36,7 @@ export default function TrackList({
   canUpload,
   canManagePlaylists,
   myTracks,
+  onSidebarToggle,
 }: Props) {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,7 +95,7 @@ export default function TrackList({
 
     doFetch();
     return () => { isStale = true; };
-  }, [playlist, debouncedQuery, page, localTrackRefetchKey]);
+  }, [playlist, debouncedQuery, page, localTrackRefetchKey, myTracks]);
 
   // Filter tracks in playlist view (client-side)
   const displayTracks = playlist && playlistFilterQuery.trim()
@@ -223,13 +225,26 @@ export default function TrackList({
 
       {/* Title + Actions */}
       <div className="px-4 md:px-6 pb-3 flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold">{displayTitle}</h2>
-          {!playlist && (
-            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-              {totalCount} track{totalCount !== 1 ? "s" : ""} {debouncedQuery ? "found" : "total"}
-            </p>
+        <div className="flex items-center gap-3">
+          {onSidebarToggle && (
+            <button
+              onClick={onSidebarToggle}
+              className="md:hidden btn-glass !p-1.5 flex items-center justify-center rounded-lg text-gray-300 hover:text-white"
+              aria-label="Open sidebar"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
           )}
+          <div>
+            <h2 className="text-xl md:text-2xl font-bold">{displayTitle}</h2>
+            {!playlist && (
+              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                {totalCount} track{totalCount !== 1 ? "s" : ""} {debouncedQuery ? "found" : "total"}
+              </p>
+            )}
+          </div>
         </div>
 
         {selectedTrackIds.length > 0 && canManagePlaylists && (

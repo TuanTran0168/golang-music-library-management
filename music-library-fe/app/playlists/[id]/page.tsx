@@ -9,7 +9,7 @@ import { ConfirmModal } from "@/components/common";
 import { TrackPickerModal } from "@/components/track";
 import { fetchPlaylistById, fetchTracksFromPlaylist, updatePlaylist, deletePlaylist } from "@/lib/api";
 import { Playlist, Track } from "@/types/music";
-import { isLoggedIn } from "@/lib/auth";
+import { getUser, isLoggedIn } from "@/lib/auth";
 
 const formatDuration = (s: number) => {
     if (isNaN(s) || s < 0) return "0:00";
@@ -30,8 +30,10 @@ function PlaylistEditor() {
     const router = useRouter();
     const id = params.id as string;
     const loggedIn = isLoggedIn();
+    const user = getUser();
 
     const [playlist, setPlaylist] = useState<Playlist | null>(null);
+    const isOwnerOrAdmin = user?.role === "admin" || String(user?.id) === String(playlist?.user_id);
     const [tracks, setTracks] = useState<Track[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -172,8 +174,18 @@ function PlaylistEditor() {
 
                         {loggedIn && !editing && (
                             <div className="flex gap-2 flex-shrink-0">
-                                <button onClick={() => setEditing(true)} className="btn-glass text-xs !py-1.5 !px-3">✏️ Edit</button>
-                                <button onClick={() => setShowDeletePlaylist(true)} className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition">🗑️</button>
+                                <button
+                                    onClick={() => isOwnerOrAdmin && setEditing(true)}
+                                    disabled={!isOwnerOrAdmin}
+                                    className={`text-xs !py-1.5 !px-3 transition ${isOwnerOrAdmin ? "btn-glass text-white" : "text-gray-500 bg-white/5 opacity-50 cursor-not-allowed rounded-lg"}`}
+                                    title={!isOwnerOrAdmin ? "No permission to edit" : "Edit playlist"}
+                                >✏️ Edit</button>
+                                <button
+                                    onClick={() => isOwnerOrAdmin && setShowDeletePlaylist(true)}
+                                    disabled={!isOwnerOrAdmin}
+                                    className={`text-xs px-3 py-1.5 rounded-lg transition ${isOwnerOrAdmin ? "bg-red-500/10 text-red-400 hover:bg-red-500/20" : "bg-gray-500/10 text-gray-500 opacity-50 cursor-not-allowed"}`}
+                                    title={!isOwnerOrAdmin ? "No permission to delete" : "Delete playlist"}
+                                >🗑️</button>
                             </div>
                         )}
                     </div>
@@ -183,7 +195,12 @@ function PlaylistEditor() {
                 <div className="flex items-center justify-between mb-3">
                     <h2 className="text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>Tracks</h2>
                     {loggedIn && (
-                        <button onClick={() => setShowTrackPicker(true)} className="btn-accent text-xs !py-1.5 !px-4">
+                        <button
+                            onClick={() => isOwnerOrAdmin && setShowTrackPicker(true)}
+                            disabled={!isOwnerOrAdmin}
+                            className={`text-xs !py-1.5 !px-4 transition ${isOwnerOrAdmin ? "btn-accent" : "bg-gray-500/20 text-gray-400 opacity-50 cursor-not-allowed rounded-lg"}`}
+                            title={!isOwnerOrAdmin ? "No permission to add tracks" : "Add tracks"}
+                        >
                             ＋ Add Tracks
                         </button>
                     )}
@@ -202,9 +219,10 @@ function PlaylistEditor() {
                             </div>
                             {loggedIn && (
                                 <button
-                                    onClick={() => setRemoveTrackTarget(t)}
-                                    className="text-xs px-2 py-1 rounded-lg text-red-400 hover:bg-red-500/10 transition opacity-0 group-hover:opacity-100"
-                                    title="Remove from playlist"
+                                    onClick={() => isOwnerOrAdmin && setRemoveTrackTarget(t)}
+                                    disabled={!isOwnerOrAdmin}
+                                    className={`text-xs px-2 py-1 rounded-lg transition ${isOwnerOrAdmin ? "text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100" : "text-gray-500 opacity-30 cursor-not-allowed"}`}
+                                    title={!isOwnerOrAdmin ? "No permission to remove" : "Remove from playlist"}
                                 >
                                     ✕
                                 </button>

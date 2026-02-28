@@ -35,9 +35,13 @@ func NewPlaylistHandler(service services.IPlaylistService) *PlaylistHandler {
 func (h *PlaylistHandler) GetPlaylists(c *gin.Context) {
 	page, limit := constants.ParsePagination(c.Query("page"), c.Query("limit"))
 
-	userID, exists := c.Get("user_id")
 	uid := ""
-	if exists {
+	if c.Query("myPlaylists") == "true" {
+		userID, exists := c.Get("user_id")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			return
+		}
 		uid = userID.(string)
 	}
 
