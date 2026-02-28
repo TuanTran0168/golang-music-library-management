@@ -14,12 +14,12 @@ import (
 
 type IPlaylistService interface {
 	GetPlaylistByID(id string) (*models.Playlist, error)
-	GetPlaylists(page, limit int) ([]*models.Playlist, error)
+	GetPlaylists(page, limit int, userID string) ([]*models.Playlist, error)
 	CreatePlaylist(playlist *models.Playlist) (*models.Playlist, error)
 	UpdatePlaylist(playlist *models.Playlist) (*models.Playlist, error)
 	DeletePlaylist(id string) error
 	StreamPlaylistM3U(id string, trackStreamBaseURL string) (string, error)
-	CreatePlaylistFormData(req *dto.CreatePlaylistRequest) (*models.Playlist, error)
+	CreatePlaylistFormData(userID string, req *dto.CreatePlaylistRequest) (*models.Playlist, error)
 	UpdatePlaylistFormData(id string, req *dto.UpdatePlaylistRequest) (*models.Playlist, error)
 }
 
@@ -41,8 +41,8 @@ func (s *PlaylistService) GetPlaylistByID(id string) (*models.Playlist, error) {
 	return s.repo.GetPlaylistByID(id)
 }
 
-func (s *PlaylistService) GetPlaylists(page, limit int) ([]*models.Playlist, error) {
-	return s.repo.GetPlaylists(page, limit)
+func (s *PlaylistService) GetPlaylists(page, limit int, userID string) ([]*models.Playlist, error) {
+	return s.repo.GetPlaylists(page, limit, userID)
 }
 
 func (s *PlaylistService) CreatePlaylist(playlist *models.Playlist) (*models.Playlist, error) {
@@ -137,7 +137,7 @@ func (s *PlaylistService) validateTrackIDs(trackIDs []string) ([]primitive.Objec
 	return objIDs, nil
 }
 
-func (s *PlaylistService) CreatePlaylistFormData(playlist *dto.CreatePlaylistRequest) (*models.Playlist, error) {
+func (s *PlaylistService) CreatePlaylistFormData(userID string, playlist *dto.CreatePlaylistRequest) (*models.Playlist, error) {
 	var albumCoverURL string
 	if playlist.AlbumCover != nil {
 		url, err := s.uploadAlbumCover(playlist.AlbumCover)
@@ -152,7 +152,10 @@ func (s *PlaylistService) CreatePlaylistFormData(playlist *dto.CreatePlaylistReq
 		return nil, err
 	}
 
+	userIDObj, _ := primitive.ObjectIDFromHex(userID)
+
 	p := &models.Playlist{
+		UserID:     userIDObj,
 		Title:      playlist.Title,
 		AlbumCover: albumCoverURL,
 		TrackIDs:   objIDs,

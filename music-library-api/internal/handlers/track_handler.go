@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/hajimehoshi/go-mp3"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -102,6 +103,7 @@ func (h *TrackHandler) GetTrackByID(c *gin.Context) {
 // @Success      201    {object} dto.TrackResponse
 // @Failure      400    {object} map[string]string
 // @Failure      500    {object} map[string]string
+// @Security     BearerAuth
 // @Router       /tracks [post]
 func (h *TrackHandler) CreateTrack(c *gin.Context) {
 	var req dto.TrackCreateRequest
@@ -138,7 +140,20 @@ func (h *TrackHandler) CreateTrack(c *gin.Context) {
 
 	duration := int(float64(decoder.Length()/4) / float64(decoder.SampleRate()))
 
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	userIDObj, err := primitive.ObjectIDFromHex(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user id"})
+		return
+	}
+
 	track := &models.Track{
+		UserID:      userIDObj,
 		Title:       req.File.Filename,
 		Artist:      req.Artist,
 		Album:       req.Album,
@@ -168,6 +183,7 @@ func (h *TrackHandler) CreateTrack(c *gin.Context) {
 // @Failure      400    {object}  map[string]string
 // @Failure      404    {object}  map[string]string
 // @Failure      500    {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /tracks/{id} [patch]
 func (h *TrackHandler) UpdateTrack(c *gin.Context) {
 	id := c.Param("id")
@@ -208,6 +224,7 @@ func (h *TrackHandler) UpdateTrack(c *gin.Context) {
 // @Success      204    "No Content"
 // @Failure      404    {object}  map[string]string
 // @Failure      500    {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /tracks/{id} [delete]
 func (h *TrackHandler) DeleteTrack(c *gin.Context) {
 	id := c.Param("id")

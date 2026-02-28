@@ -13,6 +13,7 @@ func ToPlaylistResponse(pl *models.Playlist) dto.PlaylistResponse {
 
 	return dto.PlaylistResponse{
 		ID:         pl.ID.Hex(),
+		UserID:     pl.UserID.Hex(),
 		Title:      pl.Title,
 		AlbumCover: pl.AlbumCover,
 		TrackIDs:   ids,

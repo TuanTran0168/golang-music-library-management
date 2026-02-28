@@ -7,6 +7,7 @@ import (
 
 type Track struct {
 	mgm.DefaultModel `bson:",inline"`   // ID, CreatedAt, UpdatedAt
+	UserID           primitive.ObjectID `bson:"user_id" json:"user_id"`
 	Title            string             `bson:"title" json:"title"`
 	Artist           string             `bson:"artist" json:"artist"`
 	Album            string             `bson:"album" json:"album"`

@@ -24,6 +24,7 @@ type UpdatePlaylistRequest struct {
 
 type PlaylistResponse struct {
 	ID         string   `json:"id"`
+	UserID     string   `json:"user_id"`
 	Title      string   `json:"title"`
 	AlbumCover string   `json:"album_cover"`
 	TrackIDs   []string `json:"track_ids"`

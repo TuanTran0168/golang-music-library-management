@@ -1,5 +1,22 @@
 basePath: /api
 definitions:
+  dto.AuthResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/dto.UserResponse'
+    type: object
+  dto.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
   dto.PlaylistResponse:
     properties:
       album_cover:
@@ -16,6 +33,25 @@ definitions:
         type: array
       updated_at:
         type: string
+      user_id:
+        type: string
+    type: object
+  dto.RegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      role_key:
+        description: Pass ADMIN_ROLE_KEY to register as admin
+        type: string
+    required:
+    - email
+    - name
+    - password
     type: object
   dto.TrackListResponse:
     properties:
@@ -50,6 +86,19 @@ definitions:
         type: string
       updated_at:
         type: string
+      user_id:
+        type: string
+    type: object
+  dto.UpdateRoleRequest:
+    properties:
+      role:
+        enum:
+        - admin
+        - artist
+        - user
+        type: string
+    required:
+    - role
     type: object
   dto.UpdateTrackRequest:
     properties:
@@ -67,7 +116,21 @@ definitions:
     - artist
     - title
     type: object
-host: localhost:8080
+  dto.UserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+      updated_at:
+        type: string
+    type: object
 info:
   contact: {}
   description: Clean architecture Music Library API with Golang (Gin) + MongoDB, featuring
@@ -75,6 +138,62 @@ info:
   title: Music Library API
   version: "1.0"
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login and receive JWT token
+      parameters:
+      - description: Login Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login user
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register as admin, artist, or user
+      parameters:
+      - description: Register Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register a new user
+      tags:
+      - Auth
   /playlists:
     get:
       consumes:
@@ -140,6 +259,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Create playlist
       tags:
       - Playlists
@@ -167,6 +288,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Delete playlist
       tags:
       - Playlists
@@ -254,6 +377,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Update playlist
       tags:
       - Playlists
@@ -364,6 +489,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Upload a new track
       tags:
       - tracks
@@ -391,6 +518,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Delete a track
       tags:
       - tracks
@@ -459,6 +588,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Update a track
       tags:
       - tracks
@@ -516,6 +647,80 @@ paths:
       summary: Search tracks
       tags:
       - tracks
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a paginated list of all users
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all users (Admin only)
+      tags:
+      - Users
+  /users/{id}/role:
+    patch:
+      consumes:
+      - application/json
+      description: Update a user's role by their ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New role
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update user role (Admin only)
+      tags:
+      - Users
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer {your token}" to authenticate.

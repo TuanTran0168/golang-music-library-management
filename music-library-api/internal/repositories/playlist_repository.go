@@ -6,12 +6,13 @@ import (
 
 	"github.com/kamva/mgm/v3"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type IPlaylistRepository interface {
 	GetPlaylistByID(id string) (*models.Playlist, error)
-	GetPlaylists(page, limit int) ([]*models.Playlist, error)
+	GetPlaylists(page, limit int, userID string) ([]*models.Playlist, error)
 	CreatePlaylist(playlist *models.Playlist) (*models.Playlist, error)
 	UpdatePlaylist(playlist *models.Playlist) (*models.Playlist, error)
 	DeletePlaylist(id string) error
@@ -31,11 +32,20 @@ func (r *playlistRepository) GetPlaylistByID(id string) (*models.Playlist, error
 	return playlist, nil
 }
 
-func (r *playlistRepository) GetPlaylists(page, limit int) ([]*models.Playlist, error) {
+func (r *playlistRepository) GetPlaylists(page, limit int, userID string) ([]*models.Playlist, error) {
 	playlists := []*models.Playlist{}
 	skip := int64((page - 1) * limit)
 	opts := options.Find().SetSkip(skip).SetLimit(int64(limit))
-	cursor, err := mgm.Coll(&models.Playlist{}).Find(context.Background(), bson.M{}, opts)
+
+	filter := bson.M{}
+	if userID != "" {
+		objID, err := primitive.ObjectIDFromHex(userID)
+		if err == nil {
+			filter["user_id"] = objID
+		}
+	}
+
+	cursor, err := mgm.Coll(&models.Playlist{}).Find(context.Background(), filter, opts)
 	if err != nil {
 		return nil, err
 	}

@@ -36,7 +36,13 @@ func (h *PlaylistHandler) GetPlaylists(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	playlists, err := h.service.GetPlaylists(page, limit)
+	userID, exists := c.Get("user_id")
+	uid := ""
+	if exists {
+		uid = userID.(string)
+	}
+
+	playlists, err := h.service.GetPlaylists(page, limit, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -66,6 +72,7 @@ func (h *PlaylistHandler) GetPlaylists(c *gin.Context) {
 // @Success      201 {object} dto.PlaylistResponse
 // @Failure      400 {object} map[string]string
 // @Failure      500 {object} map[string]string
+// @Security     BearerAuth
 // @Router       /playlists [post]
 func (h *PlaylistHandler) CreatePlaylist(c *gin.Context) {
 	var req dto.CreatePlaylistRequest
@@ -74,7 +81,13 @@ func (h *PlaylistHandler) CreatePlaylist(c *gin.Context) {
 		return
 	}
 
-	playlist, err := h.service.CreatePlaylistFormData(&req)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	playlist, err := h.service.CreatePlaylistFormData(userID.(string), &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -118,6 +131,7 @@ func (h *PlaylistHandler) GetPlaylistByID(c *gin.Context) {
 // @Failure      400 {object} map[string]string
 // @Failure      404 {object} map[string]string
 // @Failure      500 {object} map[string]string
+// @Security     BearerAuth
 // @Router       /playlists/{id} [patch]
 func (h *PlaylistHandler) UpdatePlaylist(c *gin.Context) {
 	idStr := c.Param("id")
@@ -150,6 +164,7 @@ func (h *PlaylistHandler) UpdatePlaylist(c *gin.Context) {
 // @Param        id path string true "Playlist ID"
 // @Success      204 {string} string "No Content"
 // @Failure      500 {object} map[string]string
+// @Security     BearerAuth
 // @Router       /playlists/{id} [delete]
 func (h *PlaylistHandler) DeletePlaylist(c *gin.Context) {
 	idStr := c.Param("id")
