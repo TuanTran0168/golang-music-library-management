@@ -13,11 +13,13 @@ import (
 
 type ITrackRepository interface {
 	GetTrackByID(id string) (*models.Track, error)
-	GetTracks(page, limit int) ([]*models.Track, error)
+	GetTracks(page, limit int, userID string) ([]*models.Track, error)
+	CountTracks(userID string) (int64, error)
 	CreateTrack(track *models.Track) error
 	UpdateTrack(track *models.Track) error
 	DeleteTrack(id string) error
-	SearchTracks(query string, page, limit int) ([]*models.Track, error)
+	SearchTracks(query string, page, limit int, userID string) ([]*models.Track, error)
+	CountSearchTracks(query string, userID string) (int64, error)
 	GetTracksByIDs(ids []primitive.ObjectID) ([]*models.Track, error)
 	FindMissingIDs(ids []primitive.ObjectID) ([]primitive.ObjectID, error)
 	ExistAllByIDs(ids []primitive.ObjectID) (bool, error)
@@ -44,11 +46,20 @@ func (r *trackRepository) GetTrackByID(id string) (*models.Track, error) {
 }
 
 // Get paginated tracks
-func (r *trackRepository) GetTracks(page, limit int) ([]*models.Track, error) {
+func (r *trackRepository) GetTracks(page, limit int, userID string) ([]*models.Track, error) {
 	tracks := []*models.Track{}
 	skip := int64((page - 1) * limit)
 	opts := options.Find().SetSkip(skip).SetLimit(int64(limit))
-	cursor, err := mgm.Coll(&models.Track{}).Find(context.Background(), bson.M{}, opts)
+
+	filter := bson.M{}
+	if userID != "" {
+		objID, err := primitive.ObjectIDFromHex(userID)
+		if err == nil {
+			filter["user_id"] = objID
+		}
+	}
+
+	cursor, err := mgm.Coll(&models.Track{}).Find(context.Background(), filter, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -56,6 +67,17 @@ func (r *trackRepository) GetTracks(page, limit int) ([]*models.Track, error) {
 		return nil, err
 	}
 	return tracks, nil
+}
+
+func (r *trackRepository) CountTracks(userID string) (int64, error) {
+	filter := bson.M{}
+	if userID != "" {
+		objID, err := primitive.ObjectIDFromHex(userID)
+		if err == nil {
+			filter["user_id"] = objID
+		}
+	}
+	return mgm.Coll(&models.Track{}).CountDocuments(context.Background(), filter)
 }
 
 // Create a new track
@@ -78,10 +100,11 @@ func (r *trackRepository) DeleteTrack(id string) error {
 }
 
 // Search tracks by title, artist, album, genre (basic)
-func (r *trackRepository) SearchTracks(query string, page, limit int) ([]*models.Track, error) {
+func (r *trackRepository) SearchTracks(query string, page, limit int, userID string) ([]*models.Track, error) {
 	tracks := []*models.Track{}
 	skip := int64((page - 1) * limit)
-	filter := bson.M{
+
+	searchFilter := bson.M{
 		"$or": []bson.M{
 			{"title": bson.M{"$regex": query, "$options": "i"}},
 			{"artist": bson.M{"$regex": query, "$options": "i"}},
@@ -89,6 +112,20 @@ func (r *trackRepository) SearchTracks(query string, page, limit int) ([]*models
 			{"genre": bson.M{"$regex": query, "$options": "i"}},
 		},
 	}
+
+	filter := searchFilter
+	if userID != "" {
+		objID, err := primitive.ObjectIDFromHex(userID)
+		if err == nil {
+			filter = bson.M{
+				"$and": []bson.M{
+					{"user_id": objID},
+					searchFilter,
+				},
+			}
+		}
+	}
+
 	opts := options.Find().SetSkip(skip).SetLimit(int64(limit))
 	cursor, err := mgm.Coll(&models.Track{}).Find(context.Background(), filter, opts)
 	if err != nil {
@@ -98,6 +135,32 @@ func (r *trackRepository) SearchTracks(query string, page, limit int) ([]*models
 		return nil, err
 	}
 	return tracks, nil
+}
+
+func (r *trackRepository) CountSearchTracks(query string, userID string) (int64, error) {
+	searchFilter := bson.M{
+		"$or": []bson.M{
+			{"title": bson.M{"$regex": query, "$options": "i"}},
+			{"artist": bson.M{"$regex": query, "$options": "i"}},
+			{"album": bson.M{"$regex": query, "$options": "i"}},
+			{"genre": bson.M{"$regex": query, "$options": "i"}},
+		},
+	}
+
+	filter := searchFilter
+	if userID != "" {
+		objID, err := primitive.ObjectIDFromHex(userID)
+		if err == nil {
+			filter = bson.M{
+				"$and": []bson.M{
+					{"user_id": objID},
+					searchFilter,
+				},
+			}
+		}
+	}
+
+	return mgm.Coll(&models.Track{}).CountDocuments(context.Background(), filter)
 }
 
 func (r *trackRepository) GetTracksByIDs(ids []primitive.ObjectID) ([]*models.Track, error) {

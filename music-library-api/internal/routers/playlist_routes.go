@@ -1,19 +1,28 @@
 package router
 
 import (
+	configs "music-library-api/configs"
 	"music-library-api/internal/handlers"
+	"music-library-api/internal/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterPlaylistRoutes(rg *gin.RouterGroup, handler *handlers.PlaylistHandler) {
+func RegisterPlaylistRoutes(rg *gin.RouterGroup, handler *handlers.PlaylistHandler, cfg *configs.Config) {
 	playlists := rg.Group("/playlists")
 	{
+		// Public routes (with optional auth for user-scoped filtering)
+		playlists.GET("", middlewares.OptionalAuthMiddleware(cfg), handler.GetPlaylists)
 		playlists.GET("/:id", handler.GetPlaylistByID)
-		playlists.GET("", handler.GetPlaylists)
-		playlists.POST("", handler.CreatePlaylist)
-		playlists.PATCH("/:id", handler.UpdatePlaylist)
-		playlists.DELETE("/:id", handler.DeletePlaylist)
 		playlists.GET("/:id/stream", handler.StreamPlaylistM3U)
+
+		// Protected routes (require auth)
+		protected := playlists.Group("")
+		protected.Use(middlewares.AuthMiddleware(cfg))
+		{
+			protected.POST("", handler.CreatePlaylist)
+			protected.PATCH("/:id", handler.UpdatePlaylist)
+			protected.DELETE("/:id", handler.DeletePlaylist)
+		}
 	}
 }

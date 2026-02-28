@@ -1,6 +1,7 @@
 package router
 
 import (
+	configs "music-library-api/configs"
 	"music-library-api/internal/handlers"
 	"music-library-api/internal/middlewares"
 
@@ -8,6 +9,9 @@ import (
 )
 
 func NewRouter(
+	cfg *configs.Config,
+	authHandler *handlers.AuthHandler,
+	userHandler *handlers.UserHandler,
 	trackHandler *handlers.TrackHandler,
 	playlistHandler *handlers.PlaylistHandler,
 ) *gin.Engine {
@@ -16,8 +20,10 @@ func NewRouter(
 
 	api := r.Group("/api")
 
-	RegisterTrackRoutes(api, trackHandler)
-	RegisterPlaylistRoutes(api, playlistHandler)
+	RegisterAuthRoutes(api, authHandler)
+	RegisterUserRoutes(api, userHandler, cfg)
+	RegisterTrackRoutes(api, trackHandler, cfg)
+	RegisterPlaylistRoutes(api, playlistHandler, cfg)
 
 	return r
 }

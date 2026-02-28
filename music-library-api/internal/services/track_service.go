@@ -15,11 +15,13 @@ import (
 
 type ITrackService interface {
 	GetTrackByID(id string) (*models.Track, error)
-	GetTracks(page, limit int) ([]*models.Track, error)
+	GetTracks(page, limit int, userID string) ([]*models.Track, error)
 	CreateTrack(track *models.Track) error
 	UpdateTrack(track *models.Track) error
 	DeleteTrack(id string) error
-	SearchTracks(query string, page, limit int) ([]*models.Track, error)
+	SearchTracks(query string, page, limit int, userID string) ([]*models.Track, error)
+	CountTracks(userID string) (int64, error)
+	CountSearchTracks(query string, userID string) (int64, error)
 	UploadMP3ToGridFS(filename string, r io.Reader) (primitive.ObjectID, error)
 	FindMissingIDs(ids []primitive.ObjectID) ([]primitive.ObjectID, error)
 	ExistAllByIDs(ids []primitive.ObjectID) (bool, error)
@@ -53,8 +55,8 @@ func (s *TrackService) GetTrackByID(id string) (*models.Track, error) {
 	return s.repo.GetTrackByID(id)
 }
 
-func (s *TrackService) GetTracks(page, limit int) ([]*models.Track, error) {
-	return s.repo.GetTracks(page, limit)
+func (s *TrackService) GetTracks(page, limit int, userID string) ([]*models.Track, error) {
+	return s.repo.GetTracks(page, limit, userID)
 }
 
 func (s *TrackService) CreateTrack(track *models.Track) error {
@@ -69,8 +71,16 @@ func (s *TrackService) DeleteTrack(id string) error {
 	return s.repo.DeleteTrack(id)
 }
 
-func (s *TrackService) SearchTracks(query string, page, limit int) ([]*models.Track, error) {
-	return s.repo.SearchTracks(query, page, limit)
+func (s *TrackService) SearchTracks(query string, page, limit int, userID string) ([]*models.Track, error) {
+	return s.repo.SearchTracks(query, page, limit, userID)
+}
+
+func (s *TrackService) CountTracks(userID string) (int64, error) {
+	return s.repo.CountTracks(userID)
+}
+
+func (s *TrackService) CountSearchTracks(query string, userID string) (int64, error) {
+	return s.repo.CountSearchTracks(query, userID)
 }
 
 // Upload MP3 file to GridFS

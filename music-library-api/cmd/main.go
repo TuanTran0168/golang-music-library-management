@@ -42,19 +42,24 @@ func main() {
 	}
 
 	// 3. Initialize repositories
+	userRepo := repositories.NewUserRepository(mongodb)
 	trackRepo := repositories.NewTrackRepository(mongodb)
 	playlistRepo := repositories.NewPlaylistRepository()
 
 	// 4. Initialize services
+	authService := services.NewAuthService(userRepo, cfg)
+	userService := services.NewUserService(userRepo)
 	trackService := services.NewTrackService(trackRepo, mongodb)
 	playlistService := services.NewPlaylistService(playlistRepo, trackService, cloudUtil)
 
 	// 5. Initialize handlers
+	authHandler := handlers.NewAuthHandler(authService)
+	userHandler := handlers.NewUserHandler(userService)
 	trackHandler := handlers.NewTrackHandler(trackService, mongodb)
 	playlistHandler := handlers.NewPlaylistHandler(playlistService)
 
 	// 6. Initialize router
-	server := router.NewRouter(trackHandler, playlistHandler)
+	server := router.NewRouter(cfg, authHandler, userHandler, trackHandler, playlistHandler)
 
 	// 7. Swagger
 	server.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
