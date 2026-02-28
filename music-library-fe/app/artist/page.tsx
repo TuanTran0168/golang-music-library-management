@@ -9,7 +9,8 @@ import { UploadTrack } from "@/components/track";
 import { ConfirmModal } from "@/components/common";
 import { Track, Playlist, Paginated } from "@/types/music";
 import { fetchTracks, deleteTrack, fetchPlaylists, createPlaylist, deletePlaylist, DEFAULT_PAGE_SIZE } from "@/lib/api";
-import { getUser } from "@/lib/auth";
+import { getUser, isLoggedIn } from "@/lib/auth";
+import { AuthModal } from "@/components/auth";
 
 const formatDuration = (s: number) => {
     if (isNaN(s) || s < 0) return "0:00";
@@ -17,10 +18,36 @@ const formatDuration = (s: number) => {
 };
 
 export default function ArtistPage() {
+    const [showAuth, setShowAuth] = useState(false);
+
+    const loggedIn = isLoggedIn();
+
+    const UnauthenticatedFallback = (
+        <div className="flex-1 flex items-center justify-center p-4">
+            <div className="glass rounded-2xl p-10 text-center max-w-sm">
+                <p className="text-4xl mb-4">🎵</p>
+                <h2 className="text-xl font-bold mb-2">Artist Studio</h2>
+                <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
+                    {loggedIn ? "You don't have permission to access the Studio." : "Please sign in to access your Studio and manage your music."}
+                </p>
+                {!loggedIn ? (
+                    <button onClick={() => setShowAuth(true)} className="btn-accent text-sm !py-2 !px-6">
+                        Sign In
+                    </button>
+                ) : (
+                    <Link href="/" className="btn-accent inline-block text-sm !py-2 !px-5">
+                        Back to Home
+                    </Link>
+                )}
+            </div>
+            {showAuth && <AuthModal onSuccess={() => window.location.reload()} onClose={() => setShowAuth(false)} />}
+        </div>
+    );
+
     return (
         <div className="flex flex-col h-screen">
             <Navbar />
-            <RoleGuard roles={["admin", "artist", "user"]}>
+            <RoleGuard roles={["admin", "artist", "user"]} fallback={UnauthenticatedFallback}>
                 <ArtistDashboard />
             </RoleGuard>
         </div>

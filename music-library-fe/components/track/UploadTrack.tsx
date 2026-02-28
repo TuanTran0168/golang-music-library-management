@@ -36,7 +36,7 @@ export default function UploadTrack({ onUploadSuccess }: Props) {
     if (releaseYear) fd.append("release_year", String(releaseYear));
 
     try {
-      await api.post(`${API_BASE}/tracks`, fd);
+      await api.post("/tracks", fd);
       toast.success(`Uploaded: ${files![0].name}`);
       setFiles(null);
       setArtist("");

@@ -28,10 +28,10 @@ export default function Navbar() {
         router.push("/");
     };
 
-    const navLinks = [];
-    if (user) {
-        navLinks.push({ href: "/artist", label: "🎤 Studio" });
-    }
+    const navLinks = [
+        { href: "/artist", label: "🎤 Studio" }
+    ];
+
     if (user && user.role === "admin") {
         navLinks.push({ href: "/admin", label: "⚙️ Admin" });
     }
