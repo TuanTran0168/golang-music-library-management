@@ -7,6 +7,7 @@ import (
 
 	"github.com/kamva/mgm/v3"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -16,7 +17,11 @@ type IUserRepository interface {
 	GetUserByEmail(email string) (*models.User, error)
 	GetUserByID(id string) (*models.User, error)
 	GetAllUsers(page, limit int) ([]*models.User, error)
+	CountUsers() (int64, error)
 	UpdateUser(user *models.User) error
+	SaveRefreshToken(userID, token string) error
+	GetUserByRefreshToken(token string) (*models.User, error)
+	RevokeRefreshToken(userID string) error
 }
 
 type userRepository struct {
@@ -69,6 +74,39 @@ func (r *userRepository) GetAllUsers(page, limit int) ([]*models.User, error) {
 	return users, nil
 }
 
+func (r *userRepository) CountUsers() (int64, error) {
+	return mgm.Coll(&models.User{}).CountDocuments(context.Background(), bson.M{})
+}
+
 func (r *userRepository) UpdateUser(user *models.User) error {
 	return mgm.Coll(user).Update(user)
+}
+
+func (r *userRepository) SaveRefreshToken(userID, token string) error {
+	oid, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return err
+	}
+	_, err = mgm.Coll(&models.User{}).UpdateOne(
+		context.Background(),
+		bson.M{"_id": oid},
+		bson.M{"$set": bson.M{"refresh_token": token}},
+	)
+	return err
+}
+
+func (r *userRepository) GetUserByRefreshToken(token string) (*models.User, error) {
+	user := &models.User{}
+	err := mgm.Coll(user).First(bson.M{"refresh_token": token}, user)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return user, nil
+}
+
+func (r *userRepository) RevokeRefreshToken(userID string) error {
+	return r.SaveRefreshToken(userID, "")
 }

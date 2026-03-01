@@ -12,9 +12,20 @@ import (
 func RegisterUserRoutes(rg *gin.RouterGroup, handler *handlers.UserHandler, cfg *configs.Config) {
 	users := rg.Group("/users")
 	users.Use(middlewares.AuthMiddleware(cfg))
-	users.Use(middlewares.RequireRoles(models.RoleAdmin))
 	{
-		users.GET("", handler.GetAllUsers)
-		users.PATCH("/:id/role", handler.UpdateUserRole)
+		// Self (any authenticated user)
+		users.GET("/me", handler.GetMe)
+		users.PATCH("/me", handler.UpdateMe)
+		users.PATCH("/me/password", handler.ChangePassword)
+
+		// Admin only
+		adminOnly := users.Group("")
+		adminOnly.Use(middlewares.RequireRoles(models.RoleAdmin))
+		{
+			adminOnly.GET("", handler.GetAllUsers)
+			adminOnly.GET("/:id", handler.GetUserByID)
+			adminOnly.PATCH("/:id/role", handler.UpdateUserRole)
+			adminOnly.PATCH("/:id/info", handler.UpdateUserInfo)
+		}
 	}
 }

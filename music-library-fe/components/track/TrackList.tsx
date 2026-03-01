@@ -148,7 +148,7 @@ export default function TrackList({
         {pages[0] > 1 && (
           <>
             <button className="pagination-btn" onClick={() => setPage(1)}>1</button>
-            {pages[0] > 2 && <span className="text-gray-500 text-sm px-1">…</span>}
+            {pages[0] > 2 && <span className="text-sm px-1" style={{ color: "var(--text-muted)" }}>…</span>}
           </>
         )}
         {pages.map((p) => (
@@ -162,7 +162,7 @@ export default function TrackList({
         ))}
         {pages[pages.length - 1] < totalPages && (
           <>
-            {pages[pages.length - 1] < totalPages - 1 && <span className="text-gray-500 text-sm px-1">…</span>}
+            {pages[pages.length - 1] < totalPages - 1 && <span className="text-sm px-1" style={{ color: "var(--text-muted)" }}>…</span>}
             <button className="pagination-btn" onClick={() => setPage(totalPages)}>
               {totalPages}
             </button>
@@ -183,7 +183,7 @@ export default function TrackList({
     return (
       <div className="flex-1 flex items-center justify-center" style={{ color: "var(--text-muted)" }}>
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }} />
           <p className="text-sm">Loading tracks...</p>
         </div>
       </div>
@@ -193,7 +193,7 @@ export default function TrackList({
   const isTransitioning = loading && tracks.length > 0;
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden min-h-0">
       {isActionModalOpen && selectedTrackIds.length > 0 && (
         <PlaylistActionModal
           selectedTrackIds={selectedTrackIds}
@@ -229,7 +229,8 @@ export default function TrackList({
           {onSidebarToggle && (
             <button
               onClick={onSidebarToggle}
-              className="md:hidden btn-glass !p-1.5 flex items-center justify-center rounded-lg text-gray-300 hover:text-white"
+              className="md:hidden btn-glass !p-1.5 flex items-center justify-center rounded-lg"
+              style={{ color: "var(--text-secondary)" }}
               aria-label="Open sidebar"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -280,9 +281,11 @@ export default function TrackList({
             return (
               <li
                 key={t.id}
-                className={`glass-card !rounded-xl p-3 group fade-in cursor-pointer ${isSelected ? "!border-purple-500/40 !bg-purple-500/10" : ""
-                  }`}
-                style={{ animationDelay: `${index * 30}ms` }}
+                className="glass-card !rounded-xl p-3 group fade-in cursor-pointer"
+                style={{
+                  animationDelay: `${index * 30}ms`,
+                  ...(isSelected ? { borderColor: "rgba(0,98,204,0.25)", background: "rgba(0,98,204,0.07)" } : {})
+                }}
               >
                 {/* Mobile layout */}
                 <div className="md:hidden flex items-center gap-3">
@@ -291,7 +294,7 @@ export default function TrackList({
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => toggleTrackSelection(t.id)}
-                      className="w-4 h-4 rounded accent-purple-500 flex-shrink-0"
+                      className="w-4 h-4 rounded flex-shrink-0" style={{ accentColor: "var(--accent)" }}
                     />
                   )}
                   <div className="flex-1 min-w-0" onClick={() => onPlay(t)}>
@@ -304,7 +307,7 @@ export default function TrackList({
                     {formatDuration(t.duration)}
                   </span>
                   <button
-                    className="btn-accent !py-1.5 !px-3 !text-xs !rounded-lg opacity-0 group-hover:opacity-100 flex-shrink-0 transition"
+                    className="btn-accent !py-1.5 !px-3 !text-xs !rounded-lg flex-shrink-0 transition"
                     onClick={() => onPlay(t)}
                   >
                     ▶
@@ -322,7 +325,7 @@ export default function TrackList({
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => toggleTrackSelection(t.id)}
-                      className="w-4 h-4 rounded accent-purple-500"
+                      className="w-4 h-4 rounded" style={{ accentColor: "var(--accent)" }}
                     />
                   ) : (
                     <span />

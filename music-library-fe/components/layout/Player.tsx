@@ -19,7 +19,7 @@ export default function Player({ track }: Props) {
   }, [track]);
 
   return (
-    <div className="glass border-t border-white/10 flex-shrink-0">
+    <div className="glass flex-shrink-0" style={{ borderTop: "1px solid var(--separator)" }}>
       <div className="flex items-center gap-4 p-3 md:p-4 max-w-screen-xl mx-auto">
         {track ? (
           <>
