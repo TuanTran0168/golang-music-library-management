@@ -7,7 +7,60 @@ import { useRouter } from "next/navigation";
 import { User } from "@/types/auth";
 import { getUser, logout } from "@/lib/auth";
 import { AuthModal } from "@/components/auth";
+import { useTheme } from "@/hooks/useTheme";
 
+// ── Sun / Moon SVG icons ───────────────────────────────────────────────────
+function SunIcon() {
+    return (
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="4" />
+            <line x1="12" y1="2" x2="12" y2="5" /><line x1="12" y1="19" x2="12" y2="22" />
+            <line x1="4.22" y1="4.22" x2="6.34" y2="6.34" /><line x1="17.66" y1="17.66" x2="19.78" y2="19.78" />
+            <line x1="2" y1="12" x2="5" y2="12" /><line x1="19" y1="12" x2="22" y2="12" />
+            <line x1="4.22" y1="19.78" x2="6.34" y2="17.66" /><line x1="17.66" y1="6.34" x2="19.78" y2="4.22" />
+        </svg>
+    );
+}
+function MoonIcon() {
+    return (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg>
+    );
+}
+
+// ── Theme toggle button ────────────────────────────────────────────────────
+function ThemeToggle() {
+    const { isDark, toggle } = useTheme();
+    return (
+        <button
+            onClick={toggle}
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            title={isDark ? "Light mode" : "Dark mode"}
+            className="relative w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200 active:scale-90"
+            style={{
+                background: isDark ? "rgba(41,151,255,0.15)" : "rgba(0,0,0,0.055)",
+                border: isDark ? "1px solid rgba(41,151,255,0.30)" : "1px solid rgba(0,0,0,0.10)",
+                color: isDark ? "#2997FF" : "#515154",
+            }}
+        >
+            <span
+                className="absolute inset-0 flex items-center justify-center transition-all duration-300"
+                style={{ opacity: isDark ? 0 : 1, transform: isDark ? "rotate(90deg) scale(0.6)" : "rotate(0) scale(1)" }}
+            >
+                <MoonIcon />
+            </span>
+            <span
+                className="absolute inset-0 flex items-center justify-center transition-all duration-300"
+                style={{ opacity: isDark ? 1 : 0, transform: isDark ? "rotate(0) scale(1)" : "rotate(-90deg) scale(0.6)" }}
+            >
+                <SunIcon />
+            </span>
+        </button>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 export default function Navbar() {
     const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
@@ -16,6 +69,8 @@ export default function Navbar() {
     const [avatarError, setAvatarError] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const drawerRef = useRef<HTMLDivElement>(null);
+    const hamburgerRef = useRef<HTMLButtonElement>(null);
+    const { isDark, toggle: toggleTheme } = useTheme();
 
     useEffect(() => {
         setUser(getUser());
@@ -29,10 +84,12 @@ export default function Navbar() {
         };
     }, [router]);
 
-    // Close drawer on outside click
+    // Close drawer on outside click — exclude the hamburger button itself
     useEffect(() => {
         if (!mobileMenuOpen) return;
         const handler = (e: MouseEvent) => {
+            // Ignore clicks on the hamburger toggle button (it has its own click handler)
+            if (hamburgerRef.current?.contains(e.target as Node)) return;
             if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) {
                 setMobileMenuOpen(false);
             }
@@ -60,16 +117,20 @@ export default function Navbar() {
     const initials = user ? user.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "";
     const fullName = user?.name ?? "";
 
+    const headerBg = isDark
+        ? (scrolled ? "rgba(10,10,18,0.92)" : "rgba(10,10,18,0.70)")
+        : (scrolled ? "rgba(255,255,255,0.88)" : "rgba(255,255,255,0.65)");
+
     return (
         <>
             <header
                 className="flex items-center justify-between px-4 md:px-8 h-14 flex-shrink-0 transition-all duration-300 z-30 relative"
                 style={{
-                    background: scrolled ? "rgba(255,255,255,0.88)" : "rgba(255,255,255,0.65)",
+                    background: headerBg,
                     backdropFilter: "blur(48px) saturate(200%)",
                     WebkitBackdropFilter: "blur(48px) saturate(200%)",
-                    borderBottom: "1px solid rgba(0,0,0,0.08)",
-                    boxShadow: scrolled ? "0 2px 20px rgba(0,0,0,0.07)" : "none",
+                    borderBottom: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)"}`,
+                    boxShadow: scrolled ? (isDark ? "0 2px 20px rgba(0,0,0,0.3)" : "0 2px 20px rgba(0,0,0,0.07)") : "none",
                 }}
             >
                 {/* Logo */}
@@ -93,7 +154,10 @@ export default function Navbar() {
                 </nav>
 
                 {/* Right — desktop */}
-                <div className="hidden sm:flex items-center gap-3 shrink-0">
+                <div className="hidden sm:flex items-center gap-2 shrink-0">
+                    {/* Dark mode toggle */}
+                    <ThemeToggle />
+
                     {user ? (
                         <>
                             <Link
@@ -101,7 +165,7 @@ export default function Navbar() {
                                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-full transition-all hover:opacity-80 active:scale-95"
                                 style={{
                                     background: "var(--accent-light)",
-                                    border: "1px solid rgba(0,98,204,0.15)",
+                                    border: "1px solid rgba(41,151,255,0.20)",
                                     textDecoration: "none",
                                     maxWidth: 200,
                                 }}
@@ -136,7 +200,7 @@ export default function Navbar() {
                             className="flex items-center gap-1.5 px-2 py-1 rounded-full transition-all active:scale-95"
                             style={{
                                 background: "var(--accent-light)",
-                                border: "1px solid rgba(0,98,204,0.15)",
+                                border: "1px solid rgba(41,151,255,0.20)",
                                 textDecoration: "none",
                             }}
                         >
@@ -147,7 +211,7 @@ export default function Navbar() {
                                         className="w-full h-full object-cover" onError={() => setAvatarError(true)} />
                                 ) : <span>{initials}</span>}
                             </div>
-                            <span className="text-xs font-semibold max-w-[80px] truncate" style={{ color: "var(--accent)" }}>
+                            <span className="text-xs font-semibold max-w-[72px] truncate" style={{ color: "var(--accent)" }}>
                                 {fullName}
                             </span>
                         </Link>
@@ -155,11 +219,14 @@ export default function Navbar() {
 
                     {/* Hamburger */}
                     <button
+                        ref={hamburgerRef}
                         onClick={() => setMobileMenuOpen(o => !o)}
                         className="w-9 h-9 flex flex-col items-center justify-center gap-[5px] rounded-xl transition-all active:scale-90"
                         style={{
-                            background: mobileMenuOpen ? "var(--accent-light)" : "rgba(255,255,255,0.72)",
-                            border: "1px solid rgba(0,0,0,0.09)",
+                            background: mobileMenuOpen
+                                ? "var(--accent-light)"
+                                : isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.055)",
+                            border: `1px solid ${isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.09)"}`,
                         }}
                         aria-label="Open menu"
                     >
@@ -177,7 +244,7 @@ export default function Navbar() {
             <div
                 className="fixed top-14 left-0 right-0 z-20 sm:hidden overflow-hidden transition-all duration-300 ease-out"
                 style={{
-                    maxHeight: mobileMenuOpen ? "400px" : "0px",
+                    maxHeight: mobileMenuOpen ? "500px" : "0px",
                     opacity: mobileMenuOpen ? 1 : 0,
                     pointerEvents: mobileMenuOpen ? "auto" : "none",
                 }}
@@ -186,10 +253,12 @@ export default function Navbar() {
                     ref={drawerRef}
                     className="mx-3 mt-1 rounded-2xl p-4 flex flex-col gap-2"
                     style={{
-                        background: "rgba(255,255,255,0.90)",
+                        background: isDark ? "rgba(16,16,24,0.95)" : "rgba(255,255,255,0.92)",
                         backdropFilter: "blur(40px) saturate(200%)",
-                        border: "1px solid rgba(0,0,0,0.08)",
-                        boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                        border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}`,
+                        boxShadow: isDark
+                            ? "0 8px 32px rgba(0,0,0,0.50)"
+                            : "0 8px 32px rgba(0,0,0,0.12)",
                     }}
                 >
                     {/* Nav links */}
@@ -204,12 +273,28 @@ export default function Navbar() {
                                 fontWeight: 500,
                                 fontSize: 15,
                                 textDecoration: "none",
-                                background: "rgba(0,0,0,0.035)",
+                                background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.035)",
                             }}
                         >
                             {link.label}
                         </Link>
                     ))}
+
+                    {/* Dark mode toggle row */}
+                    <button
+                        onClick={() => { toggleTheme(); }}
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all active:scale-98"
+                        style={{
+                            color: "var(--text-primary)",
+                            fontWeight: 500,
+                            fontSize: 15,
+                            background: isDark ? "rgba(41,151,255,0.10)" : "rgba(0,0,0,0.035)",
+                            border: isDark ? "1px solid rgba(41,151,255,0.20)" : "1px solid transparent",
+                        }}
+                    >
+                        <span>{isDark ? "☀️" : "🌙"}</span>
+                        <span>{isDark ? "Light Mode" : "Dark Mode"}</span>
+                    </button>
 
                     {/* Divider */}
                     <div className="my-1" style={{ height: 1, background: "var(--separator)" }} />
@@ -219,7 +304,7 @@ export default function Navbar() {
                         <button
                             onClick={handleLogout}
                             className="flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-medium transition-all"
-                            style={{ background: "rgba(255,59,48,0.08)", color: "#c0392b" }}
+                            style={{ background: "rgba(255,59,48,0.08)", color: "#FF3B30" }}
                         >
                             🚪 Sign Out
                         </button>

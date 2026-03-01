@@ -54,6 +54,50 @@
   --separator: rgba(0, 0, 0, 0.10);
 }
 
+/* ================================================
+   Dark Mode Tokens
+   Applied via [data-theme="dark"] on <html>
+   ================================================ */
+[data-theme="dark"] {
+  /* ---- Backgrounds ---- */
+  --bg-base: #09090E;
+  --bg-surface: rgba(22, 22, 30, 0.80);
+  --bg-elevated: rgba(30, 30, 40, 0.90);
+  --bg-hover: rgba(40, 40, 52, 0.90);
+  --bg-subtle: #111118;
+
+  /* ---- Glass ---- */
+  --glass-blur: 48px;
+  --glass-saturate: 180%;
+  --glass-bg: rgba(20, 20, 30, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.30),
+    0 12px 40px rgba(0, 0, 0, 0.40),
+    0 1px 0px rgba(255, 255, 255, 0.06) inset;
+
+  /* ---- Text ---- */
+  --text-primary: #F5F5F7;
+  --text-secondary: #AEAEB2;
+  --text-muted: #6E6E73;
+  --text-inverse: #1D1D1F;
+
+  /* ---- Accent — Apple Blue (dark mode brighter) ---- */
+  --accent: #2997FF;
+  --accent-hover: #47A8FF;
+  --accent-light: rgba(41, 151, 255, 0.14);
+  --accent-glow: rgba(41, 151, 255, 0.30);
+
+  /* ---- Iris blob colors — deeper, more vibrant ---- */
+  --iris-blue: rgba(41, 100, 200, 0.55);
+  --iris-gold: rgba(180, 100, 20, 0.45);
+  --iris-lavender: rgba(110, 60, 200, 0.45);
+  --iris-teal: rgba(0, 150, 140, 0.35);
+
+  /* ---- Dividers ---- */
+  --separator: rgba(255, 255, 255, 0.10);
+}
+
 @theme inline {
   --color-background: var(--bg-base);
   --color-foreground: var(--text-primary);
@@ -85,6 +129,10 @@ body {
   overflow: hidden;
   min-height: 100dvh;
   height: 100dvh;
+  /* Smooth theme transition */
+  transition:
+    background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ================================================
@@ -97,6 +145,35 @@ body {
   z-index: 0;
   overflow: hidden;
   background: linear-gradient(160deg, #FFFFFF 0%, #F5F5F7 100%);
+  transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] .gradient-bg {
+  background: linear-gradient(160deg, #060610 0%, #0C0C18 100%);
+}
+
+/* Dark mode blob overrides — deeper, moodier */
+[data-theme="dark"] .gradient-bg::before {
+  background: radial-gradient(circle at 40% 40%,
+      rgba(41, 100, 200, 0.60) 0%,
+      rgba(20, 60, 160, 0.25) 40%,
+      transparent 70%);
+  filter: blur(80px);
+}
+
+[data-theme="dark"] .gradient-bg::after {
+  background: radial-gradient(circle at 60% 60%,
+      rgba(110, 40, 180, 0.50) 0%,
+      rgba(80, 20, 140, 0.20) 40%,
+      transparent 70%);
+  filter: blur(90px);
+}
+
+[data-theme="dark"] .iris-lavender {
+  background: radial-gradient(circle,
+      rgba(80, 40, 180, 0.50) 0%,
+      rgba(50, 20, 130, 0.18) 50%,
+      transparent 70%);
 }
 
 /* -- Blob 1: Sky Blue (top-left, iPhone Air) */
@@ -232,6 +309,25 @@ body {
   transition: transform 0.10s cubic-bezier(0.6, 0, 0.8, 1);
 }
 
+/* Dark mode glass card */
+[data-theme="dark"] .glass-card {
+  background: rgba(22, 22, 32, 0.75);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.25),
+    0 8px 24px rgba(0, 0, 0, 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+[data-theme="dark"] .glass-card:hover {
+  background: rgba(30, 30, 44, 0.85);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.30),
+    0 16px 40px rgba(0, 0, 0, 0.40),
+    0 1px 0 rgba(255, 255, 255, 0.08) inset;
+}
+
 /* ================================================
    Inputs — Glass Field
    ================================================ */
@@ -257,6 +353,16 @@ body {
 
 .glass-input::placeholder {
   color: var(--text-muted);
+}
+
+/* Dark mode input */
+[data-theme="dark"] .glass-input {
+  background: rgba(22, 22, 32, 0.80);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+[data-theme="dark"] .glass-input:focus {
+  background: rgba(28, 28, 42, 0.92);
 }
 
 /* ================================================
@@ -337,6 +443,17 @@ body {
   transform: none;
 }
 
+/* Dark mode btn-glass */
+[data-theme="dark"] .btn-glass {
+  background: rgba(30, 30, 42, 0.80);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+[data-theme="dark"] .btn-glass:hover {
+  background: rgba(40, 40, 56, 0.92);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
 /* ================================================
    Text Gradient — Apple-style blue-to-violet
    ================================================ */
@@ -370,6 +487,14 @@ body {
   background: rgba(0, 0, 0, 0.24);
 }
 
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
 /* ================================================
    Pagination
    ================================================ */
@@ -395,6 +520,16 @@ body {
   color: var(--text-primary);
   border-color: rgba(0, 0, 0, 0.12);
   transform: scale(1.07);
+}
+
+[data-theme="dark"] .pagination-btn {
+  background: rgba(22, 22, 32, 0.72);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+[data-theme="dark"] .pagination-btn:hover {
+  background: rgba(35, 35, 52, 0.88);
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
 .pagination-btn:active {
