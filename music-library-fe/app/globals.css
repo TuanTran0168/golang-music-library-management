@@ -1,178 +1,360 @@
 @import "tailwindcss";
 
+/* ================================================
+   Improok Music — Apple iPhone Air Aesthetic
+   Liquid Glass iOS 26
+   Palette:
+     Base: #FFFFFF · #F5F5F7
+     Text: #1D1D1F (Apple black) · #6E6E73 (secondary)
+     Accent Blue: #0071E3 — Apple signature
+     Gradient iris: soft sky · soft gold · soft lavender
+   ================================================ */
+
 :root {
-  --glass-bg: rgba(255, 255, 255, 0.08);
-  --glass-border: rgba(255, 255, 255, 0.15);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  --glass-blur: 20px;
-  --accent-gradient: linear-gradient(135deg, #a855f7, #ec4899, #3b82f6);
-  --accent-primary: #a855f7;
-  --accent-pink: #ec4899;
-  --bg-deep: #0a0a1a;
-  --bg-surface: rgba(15, 15, 35, 0.8);
-  --text-primary: #f0f0f5;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
+  /* ---- Backgrounds ---- */
+  --bg-base: #FFFFFF;
+  --bg-surface: rgba(255, 255, 255, 0.78);
+  --bg-elevated: rgba(255, 255, 255, 0.94);
+  --bg-hover: rgba(255, 255, 255, 0.90);
+  --bg-subtle: #F2F2F6;
+
+  /* ---- Glass ---- */
+  --glass-blur: 48px;
+  --glass-saturate: 200%;
+  --glass-bg: rgba(255, 255, 255, 0.70);
+  --glass-border: rgba(0, 0, 0, 0.09);
+  --glass-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.05),
+    0 12px 40px rgba(0, 0, 0, 0.09),
+    0 1px 0px rgba(255, 255, 255, 0.85) inset;
+
+  /* ---- Text (Apple-style) ---- */
+  --text-primary: #1D1D1F;
+  --text-secondary: #424245;
+  --text-muted: #78787C;
+  --text-inverse: #FFFFFF;
+
+  /* ---- Accent — Apple Blue (deeper) ---- */
+  --accent: #0062CC;
+  --accent-hover: #004EA3;
+  --accent-light: rgba(0, 98, 204, 0.10);
+  --accent-glow: rgba(0, 98, 204, 0.24);
+
+  /* ---- Gradient Iris Colors (more saturated) ---- */
+  --iris-blue: rgba(120, 185, 255, 0.70);
+  /* iPhone Air sky blue */
+  --iris-gold: rgba(255, 198, 100, 0.62);
+  /* MacBook Air gold */
+  --iris-lavender: rgba(178, 140, 255, 0.52);
+  /* iPhone 17 purple */
+  --iris-teal: rgba(80, 210, 190, 0.35);
+  /* fresh teal accent */
+
+  /* ---- Dividers ---- */
+  --separator: rgba(0, 0, 0, 0.10);
 }
 
 @theme inline {
-  --color-background: var(--bg-deep);
+  --color-background: var(--bg-base);
   --color-foreground: var(--text-primary);
-  --font-sans: var(--font-inter);
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
 }
 
-/* ---------- Base ---------- */
-* {
+/* ================================================
+   Base Reset
+   ================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.1) transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.14) transparent;
+}
+
+html {
+  font-size: 16px;
 }
 
 body {
-  background: var(--bg-deep);
+  background: var(--bg-base);
   color: var(--text-primary);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   overflow: hidden;
+  min-height: 100dvh;
+  height: 100dvh;
 }
 
-/* ---------- Animated Gradient Background ---------- */
+/* ================================================
+   Animated Background — Apple iPhone Air Iris
+   Soft pastel gradient blobs, slow + elegant drift
+   ================================================ */
 .gradient-bg {
   position: fixed;
   inset: 0;
   z-index: 0;
   overflow: hidden;
+  background: linear-gradient(160deg, #FFFFFF 0%, #F5F5F7 100%);
 }
 
-.gradient-bg::before,
+/* -- Blob 1: Sky Blue (top-left, iPhone Air) */
+.gradient-bg::before {
+  content: '';
+  position: absolute;
+  width: 800px;
+  height: 800px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%,
+      rgba(120, 185, 255, 0.72) 0%,
+      rgba(80, 148, 255, 0.30) 40%,
+      transparent 70%);
+  top: -20%;
+  left: -15%;
+  filter: blur(65px);
+  animation: iris-drift-a 26s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* -- Blob 2: Gold (center-right, MacBook Air) */
 .gradient-bg::after {
   content: '';
   position: absolute;
+  width: 680px;
+  height: 680px;
   border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.4;
-  animation: float 20s ease-in-out infinite;
-}
-
-.gradient-bg::before {
-  width: 600px;
-  height: 600px;
-  background: #a855f7;
-  top: -10%;
-  left: -10%;
-}
-
-.gradient-bg::after {
-  width: 500px;
-  height: 500px;
-  background: #3b82f6;
-  bottom: -10%;
+  background: radial-gradient(circle at 60% 60%,
+      rgba(255, 198, 100, 0.68) 0%,
+      rgba(255, 168, 60, 0.28) 40%,
+      transparent 70%);
+  bottom: -15%;
   right: -10%;
-  animation-delay: -10s;
+  filter: blur(72px);
+  animation: iris-drift-a 32s ease-in-out infinite reverse;
+  will-change: transform;
 }
 
-@keyframes float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  25% { transform: translate(80px, 40px) scale(1.1); }
-  50% { transform: translate(-40px, 80px) scale(0.95); }
-  75% { transform: translate(40px, -40px) scale(1.05); }
+/* Extra blobs injected via JS/span or inner div — declare classes for optional use */
+.iris-lavender {
+  position: absolute;
+  width: 560px;
+  height: 560px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+      rgba(178, 140, 255, 0.55) 0%,
+      rgba(140, 100, 255, 0.22) 50%,
+      transparent 70%);
+  top: 30%;
+  left: 40%;
+  filter: blur(80px);
+  animation: iris-drift-b 38s ease-in-out infinite;
+  will-change: transform;
+  pointer-events: none;
 }
 
-/* ---------- Glass Panels ---------- */
+@keyframes iris-drift-a {
+
+  0%,
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+
+  25% {
+    transform: translate(50px, 35px) scale(1.05);
+  }
+
+  50% {
+    transform: translate(-30px, 60px) scale(0.97);
+  }
+
+  75% {
+    transform: translate(35px, -25px) scale(1.03);
+  }
+}
+
+@keyframes iris-drift-b {
+
+  0%,
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+
+  33% {
+    transform: translate(-40px, 30px) scale(1.06);
+  }
+
+  66% {
+    transform: translate(40px, -40px) scale(0.95);
+  }
+}
+
+/* ================================================
+   Glass Panels — Liquid Glass iOS 26
+   ================================================ */
 .glass {
   background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(1.04);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(1.04);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(28px) saturate(180%) brightness(1.03);
+  -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.03);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 18px;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.06),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  transition:
+    background 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    transform 0.20s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(0, 0, 0, 0.09);
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.05),
+    0 16px 40px rgba(0, 0, 0, 0.09),
+    0 1px 0 rgba(255, 255, 255, 1) inset;
+  transform: translateY(-2px) scale(1.006);
 }
 
+.glass-card:active {
+  transform: scale(0.974);
+  transition: transform 0.10s cubic-bezier(0.6, 0, 0.8, 1);
+}
+
+/* ================================================
+   Inputs — Glass Field
+   ================================================ */
 .glass-input {
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(0, 0, 0, 0.10);
   border-radius: 12px;
   color: var(--text-primary);
-  transition: all 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
 }
 
 .glass-input:focus {
   outline: none;
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2);
+  background: rgba(255, 255, 255, 0.92);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 .glass-input::placeholder {
   color: var(--text-muted);
 }
 
-/* ---------- Buttons ---------- */
+/* ================================================
+   Buttons
+   ================================================ */
+
+/* Primary — Apple Blue */
 .btn-accent {
-  background: var(--accent-gradient);
-  color: white;
+  background: var(--accent);
+  color: #FFFFFF;
   font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.01em;
   border: none;
-  border-radius: 12px;
+  border-radius: 980px;
+  /* Apple pill shape */
   padding: 10px 24px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+  min-height: 44px;
+  transition:
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 12px rgba(0, 113, 227, 0.30), 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
 .btn-accent:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.45);
+  background: var(--accent-hover);
+  box-shadow: 0 4px 18px rgba(0, 113, 227, 0.40), 0 2px 4px rgba(0, 0, 0, 0.10);
+  transform: translateY(-1px) scale(1.02);
+}
+
+.btn-accent:active {
+  transform: scale(0.96);
+  transition: transform 0.08s ease;
 }
 
 .btn-accent:disabled {
-  opacity: 0.5;
+  opacity: 0.42;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Secondary — glass pill */
+.btn-glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 15px;
+  border-radius: 980px;
+  padding: 10px 20px;
+  cursor: pointer;
+  min-height: 44px;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(0, 0, 0, 0.16);
+  transform: translateY(-1px);
+}
+
+.btn-glass:active {
+  transform: scale(0.96);
+  transition: transform 0.08s ease;
+}
+
+.btn-glass:disabled {
+  opacity: 0.45;
   cursor: not-allowed;
   transform: none;
 }
 
-.btn-glass {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: var(--text-primary);
-  font-weight: 500;
-  border-radius: 12px;
-  padding: 10px 20px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-glass:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.25);
-}
-
-/* ---------- Text Gradient ---------- */
+/* ================================================
+   Text Gradient — Apple-style blue-to-violet
+   ================================================ */
 .text-gradient {
-  background: var(--accent-gradient);
+  background: linear-gradient(135deg,
+      #0071E3 0%,
+      #5E5CE6 48%,
+      #BF5AF2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* ---------- Scrollbar ---------- */
+/* ================================================
+   Scrollbar
+   ================================================ */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -180,91 +362,171 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.14);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.24);
 }
 
-/* ---------- Pagination ---------- */
+/* ================================================
+   Pagination
+   ================================================ */
 .pagination-btn {
-  min-width: 36px;
-  height: 36px;
+  min-width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.2s ease;
   cursor: pointer;
-  border: 1px solid transparent;
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.65);
   color: var(--text-secondary);
+  transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  backdrop-filter: blur(12px);
 }
 
 .pagination-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: white;
+  background: rgba(255, 255, 255, 0.90);
+  color: var(--text-primary);
+  border-color: rgba(0, 0, 0, 0.12);
+  transform: scale(1.07);
+}
+
+.pagination-btn:active {
+  transform: scale(0.93);
+  transition: transform 0.08s ease;
 }
 
 .pagination-btn.active {
-  background: var(--accent-gradient);
-  color: white;
+  background: var(--accent);
+  color: #fff;
   border-color: transparent;
-  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.3);
+  box-shadow: 0 2px 10px rgba(0, 113, 227, 0.30);
 }
 
 .pagination-btn:disabled {
-  opacity: 0.3;
+  opacity: 0.30;
   cursor: not-allowed;
+  transform: none;
 }
 
-/* ---------- Animations ---------- */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+/* ================================================
+   Animations
+   ================================================ */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .fade-in {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeInUp 0.30s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .slide-up {
-  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideUp 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* ---------- Mobile responsive ---------- */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.90);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.scale-in {
+  animation: scaleIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+/* ================================================
+   File Input
+   ================================================ */
+input[type="file"]::file-selector-button {
+  background: rgba(255, 255, 255, 0.80);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease;
+  font-family: inherit;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(0, 0, 0, 0.18);
+}
+
+/* ================================================
+   Mobile Sidebar + Overlay
+   ================================================ */
 @media (max-width: 768px) {
   .mobile-sidebar {
     position: fixed;
-    inset: 0;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 280px;
     z-index: 40;
     transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  
+
   .mobile-sidebar.open {
     transform: translateX(0);
   }
-  
+
   .mobile-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.20);
+    backdrop-filter: blur(6px);
     z-index: 39;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
   }
-  
+
   .mobile-overlay.open {
     opacity: 1;
     pointer-events: auto;

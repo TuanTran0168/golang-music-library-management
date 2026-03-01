@@ -9,7 +9,8 @@ import { UploadTrack } from "@/components/track";
 import { ConfirmModal } from "@/components/common";
 import { Track, Playlist, Paginated } from "@/types/music";
 import { fetchTracks, deleteTrack, fetchPlaylists, createPlaylist, deletePlaylist, DEFAULT_PAGE_SIZE } from "@/lib/api";
-import { getUser } from "@/lib/auth";
+import { getUser, isLoggedIn } from "@/lib/auth";
+import { AuthModal } from "@/components/auth";
 
 const formatDuration = (s: number) => {
     if (isNaN(s) || s < 0) return "0:00";
@@ -17,10 +18,36 @@ const formatDuration = (s: number) => {
 };
 
 export default function ArtistPage() {
+    const [showAuth, setShowAuth] = useState(false);
+
+    const loggedIn = isLoggedIn();
+
+    const UnauthenticatedFallback = (
+        <div className="flex-1 flex items-center justify-center p-4">
+            <div className="glass rounded-2xl p-10 text-center max-w-sm">
+                <p className="text-4xl mb-4">🎵</p>
+                <h2 className="text-xl font-bold mb-2">Artist Studio</h2>
+                <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
+                    {loggedIn ? "You don't have permission to access the Studio." : "Please sign in to access your Studio and manage your music."}
+                </p>
+                {!loggedIn ? (
+                    <button onClick={() => setShowAuth(true)} className="btn-accent text-sm !py-2 !px-6">
+                        Sign In
+                    </button>
+                ) : (
+                    <Link href="/" className="btn-accent inline-block text-sm !py-2 !px-5">
+                        Back to Home
+                    </Link>
+                )}
+            </div>
+            {showAuth && <AuthModal onSuccess={() => window.location.reload()} onClose={() => setShowAuth(false)} />}
+        </div>
+    );
+
     return (
         <div className="flex flex-col h-screen">
             <Navbar />
-            <RoleGuard roles={["admin", "artist", "user"]}>
+            <RoleGuard roles={["admin", "artist", "user"]} fallback={UnauthenticatedFallback}>
                 <ArtistDashboard />
             </RoleGuard>
         </div>
@@ -126,20 +153,34 @@ function ArtistDashboard() {
                     </div>
 
                     {/* Tab Toggle */}
-                    <div className="flex gap-2 mb-6 p-1 rounded-xl max-w-xs" style={{ background: "rgba(255,255,255,0.05)" }}>
+                    <div className="flex gap-2 mb-6 max-w-xs">
                         {user?.role !== "user" && (
-                            <button onClick={() => setTab("tracks")} className={`flex-1 py-2 rounded-lg text-sm font-semibold transition ${tab === "tracks" ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow" : "text-gray-400 hover:text-white"}`}>
+                            <button
+                                onClick={() => setTab("tracks")}
+                                className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                                style={tab === "tracks"
+                                    ? { background: "var(--accent)", color: "#fff", boxShadow: "0 2px 10px var(--accent-glow)", border: "1px solid transparent" }
+                                    : { background: "rgba(255,255,255,0.72)", color: "var(--text-secondary)", border: "1px solid var(--separator)", backdropFilter: "blur(12px)" }
+                                }
+                            >
                                 🎵 Tracks
                             </button>
                         )}
-                        <button onClick={() => setTab("playlists")} className={`flex-1 py-2 rounded-lg text-sm font-semibold transition ${tab === "playlists" ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow" : "text-gray-400 hover:text-white"}`}>
+                        <button
+                            onClick={() => setTab("playlists")}
+                            className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                            style={tab === "playlists"
+                                ? { background: "var(--accent)", color: "#fff", boxShadow: "0 2px 10px var(--accent-glow)", border: "1px solid transparent" }
+                                : { background: "rgba(255,255,255,0.72)", color: "var(--text-secondary)", border: "1px solid var(--separator)", backdropFilter: "blur(12px)" }
+                            }
+                        >
                             🎶 Playlists
                         </button>
                     </div>
 
                     {loading ? (
                         <div className="text-center py-12" style={{ color: "var(--text-muted)" }}>
-                            <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                            <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }} />
                             Loading...
                         </div>
                     ) : tab === "tracks" ? (
@@ -155,7 +196,7 @@ function ArtistDashboard() {
                                         </div>
                                         <div className="flex items-center gap-2 flex-shrink-0">
                                             <Link href={`/tracks/${t.id}`} className="btn-glass text-xs !py-1.5 !px-3">✏️ Edit</Link>
-                                            <button onClick={() => setDeleteTarget({ type: "track", item: t })} className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition">🗑️ Delete</button>
+                                            <button onClick={() => setDeleteTarget({ type: "track", item: t })} className="text-xs px-3 py-1.5 rounded-xl transition" style={{ background: "rgba(255,59,48,0.10)", color: "#c0392b", border: "1px solid rgba(255,59,48,0.18)" }}>🗑️ Delete</button>
                                         </div>
                                     </div>
                                 ))}
@@ -196,7 +237,7 @@ function ArtistDashboard() {
                                         </div>
                                         <div className="flex items-center gap-2 flex-shrink-0">
                                             <Link href={`/playlists/${pl.id}`} className="btn-glass text-xs !py-1.5 !px-3">✏️ Edit</Link>
-                                            <button onClick={() => setDeleteTarget({ type: "playlist", item: pl })} className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition">🗑️ Delete</button>
+                                            <button onClick={() => setDeleteTarget({ type: "playlist", item: pl })} className="text-xs px-3 py-1.5 rounded-xl transition" style={{ background: "rgba(255,59,48,0.10)", color: "#c0392b", border: "1px solid rgba(255,59,48,0.18)" }}>🗑️ Delete</button>
                                         </div>
                                     </div>
                                 ))}

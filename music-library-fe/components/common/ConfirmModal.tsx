@@ -25,7 +25,7 @@ export default function ConfirmModal({
 }: Props) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !loading && onCancel()} />
+            <div className="absolute inset-0 backdrop-blur-sm" style={{ background: "rgba(0,0,0,0.25)" }} onClick={() => !loading && onCancel()} />
             <div className="glass rounded-2xl p-6 w-full max-w-sm relative slide-up text-center">
                 <p className="text-3xl mb-4">{icon}</p>
                 <h3 className="text-lg font-bold mb-2">{title}</h3>
@@ -42,10 +42,10 @@ export default function ConfirmModal({
                     <button
                         onClick={onConfirm}
                         disabled={loading}
-                        className={`text-sm font-semibold py-2 px-5 rounded-xl transition ${danger
-                                ? "bg-gradient-to-r from-red-500 to-orange-500 text-white hover:shadow-lg hover:shadow-red-500/25"
-                                : "btn-accent"
-                            }`}
+                        className="text-sm font-semibold py-2 px-5 rounded-xl transition"
+                        style={danger
+                            ? { background: "#ef4444", color: "#fff" }
+                            : {}}
                     >
                         {loading ? "Processing..." : confirmLabel}
                     </button>
@@ -53,7 +53,8 @@ export default function ConfirmModal({
 
                 <button
                     onClick={() => !loading && onCancel()}
-                    className="absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition text-sm"
+                    className="absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center transition text-sm"
+                    style={{ color: "var(--text-muted)" }}
                 >
                     ✕
                 </button>

@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
-
 import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: "Improok Music",
-  description: "A modern music library with Liquid Glass UI. Browse, upload, and stream your music collection.",
+  description: "A music library with Apple-inspired Liquid Glass UI. Browse, upload, and stream your collection.",
 };
 
 export default function RootLayout({
@@ -18,25 +17,41 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body>
         <Toaster
           position="top-right"
           toastOptions={{
             style: {
-              background: "rgba(20, 20, 40, 0.9)",
-              backdropFilter: "blur(12px)",
-              color: "#f0f0f5",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: "12px",
+              background: "rgba(255, 255, 255, 0.85)",
+              backdropFilter: "blur(24px) saturate(180%)",
+              color: "#1D1D1F",
+              border: "1px solid rgba(0,0,0,0.07)",
+              borderRadius: "16px",
               fontSize: "14px",
+              fontFamily: "'Plus Jakarta Sans', -apple-system, sans-serif",
+              fontWeight: 500,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.10), 0 1px 0 rgba(255,255,255,0.9) inset",
             },
-            success: { iconTheme: { primary: "#a855f7", secondary: "#fff" } },
-            error: { iconTheme: { primary: "#ef4444", secondary: "#fff" } },
+            success: {
+              iconTheme: { primary: "#0071E3", secondary: "#fff" },
+            },
+            error: {
+              iconTheme: { primary: "#FF3B30", secondary: "#fff" },
+            },
           }}
         />
-        <div className="gradient-bg" aria-hidden="true" />
+
+        {/* Apple iPhone Air gradient background — 3 iris blobs */}
+        <div className="gradient-bg" aria-hidden="true">
+          {/* Lavender blob (center, iPhone 17 purple) */}
+          <div className="iris-lavender" />
+        </div>
+
         <div className="relative z-10 min-h-screen flex flex-col">
           {children}
         </div>

@@ -15,6 +15,7 @@ interface Props {
   refetchKey: number;
   refetchPlaylists: () => void;
   canManage: boolean;
+  onClose?: () => void;
 }
 
 export default function PlaylistSidebar({
@@ -24,6 +25,7 @@ export default function PlaylistSidebar({
   refetchKey,
   refetchPlaylists,
   canManage,
+  onClose,
 }: Props) {
   const user = getUser();
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -59,16 +61,34 @@ export default function PlaylistSidebar({
   };
 
   return (
-    <aside className="glass w-64 md:w-72 flex-shrink-0 flex flex-col h-full border-r border-white/10">
+    <aside className="glass w-64 md:w-64 flex-shrink-0 flex flex-col h-full" style={{ borderRight: "1px solid var(--separator)" }}>
+      {/* Mobile header: title + close button */}
+      <div className="flex items-center justify-between px-4 pt-4 pb-2 md:hidden">
+        <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Playlists</span>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all active:scale-90"
+            style={{ background: "rgba(0,0,0,0.06)", color: "var(--text-muted)" }}
+          >
+            ✕
+          </button>
+        )}
+      </div>
       <div className="p-4 flex-1 overflow-y-auto">
         <p className="text-[10px] uppercase font-bold tracking-widest mb-3 px-2" style={{ color: "var(--text-muted)" }}>
           Browse
         </p>
         <button
-          className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all mb-1 ${activeView === "all"
-            ? "bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-white border border-purple-500/30"
-            : "text-gray-300 hover:bg-white/5"
-            }`}
+          className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all mb-1`}
+          style={activeView === "all" ? {
+            background: "var(--accent-light)",
+            color: "var(--accent)",
+            border: "1px solid rgba(110,108,255,0.2)"
+          } : {
+            color: "var(--text-secondary)",
+            border: "1px solid transparent"
+          }}
           onClick={() => handleSelect(null)}
         >
           🎧 All Tracks
@@ -82,38 +102,57 @@ export default function PlaylistSidebar({
           <div className="px-3 py-2 text-xs" style={{ color: "var(--text-muted)" }}>Loading...</div>
         ) : (
           <ul className="space-y-1">
-            {playlists.map((pl) => (
-              <li
-                key={pl.id}
-                className={`group flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all text-sm ${activeView === pl.id
-                  ? "bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-white border border-purple-500/30"
-                  : "text-gray-300 hover:bg-white/5"
-                  }`}
-                onClick={() => handleSelect(pl)}
-              >
-                <Link href={`/playlists/${pl.id}`} onClick={(e) => e.stopPropagation()} className="truncate font-medium hover:text-purple-300 transition">
-                  🎶 {pl.title}
-                </Link>
-                {canManage && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (user?.role === "admin" || user?.id === pl.user_id) setDeleteTarget(pl);
-                    }}
-                    disabled={!(user?.role === "admin" || user?.id === pl.user_id)}
-                    className={`p-1 rounded-lg flex-shrink-0 transition ${user?.role === "admin" || user?.id === pl.user_id
-                        ? "text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 hover:bg-red-500/10"
-                        : "text-gray-500 opacity-30 cursor-not-allowed group-hover:opacity-30"
-                      }`}
-                    title={!(user?.role === "admin" || user?.id === pl.user_id) ? "No permission to delete" : "Delete playlist"}
+            {playlists.map((pl) => {
+              const isActive = activeView === pl.id;
+              const canDelete = user?.role === "admin" || user?.id === pl.user_id;
+              return (
+                <li
+                  key={pl.id}
+                  className={`group flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all text-sm`}
+                  style={isActive ? {
+                    background: "var(--accent-light)",
+                    color: "var(--accent)",
+                    border: "1px solid rgba(110,108,255,0.2)"
+                  } : {
+                    color: "var(--text-secondary)",
+                    border: "1px solid transparent"
+                  }}
+                  onClick={() => handleSelect(pl)}
+                >
+                  <Link
+                    href={`/playlists/${pl.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="truncate font-medium transition"
+                    style={{ color: "inherit" }}
                   >
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 10-2 0v6a1 1 0 102 0V8z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                )}
-              </li>
-            ))}
+                    🎶 {pl.title}
+                  </Link>
+                  {canManage && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (canDelete) setDeleteTarget(pl);
+                      }}
+                      disabled={!canDelete}
+                      className={`p-1 rounded-lg flex-shrink-0 transition opacity-0 group-hover:opacity-100`}
+                      style={canDelete ? {
+                        color: "#ef4444",
+                        background: "transparent"
+                      } : {
+                        color: "var(--text-muted)",
+                        cursor: "not-allowed",
+                        opacity: "0.3"
+                      }}
+                      title={!canDelete ? "No permission to delete" : "Delete playlist"}
+                    >
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 10-2 0v6a1 1 0 102 0V8z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
+                </li>
+              );
+            })}
             {playlists.length === 0 && !loading && (
               <li className="px-3 py-2 text-xs" style={{ color: "var(--text-muted)" }}>No playlists yet</li>
             )}
@@ -121,7 +160,6 @@ export default function PlaylistSidebar({
         )}
       </div>
 
-      {/* Delete Playlist Modal */}
       {deleteTarget && (
         <ConfirmModal
           icon="🗑️"

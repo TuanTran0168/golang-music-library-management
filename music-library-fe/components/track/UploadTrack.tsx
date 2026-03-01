@@ -36,7 +36,7 @@ export default function UploadTrack({ onUploadSuccess }: Props) {
     if (releaseYear) fd.append("release_year", String(releaseYear));
 
     try {
-      await api.post(`${API_BASE}/tracks`, fd);
+      await api.post("/tracks", fd);
       toast.success(`Uploaded: ${files![0].name}`);
       setFiles(null);
       setArtist("");
@@ -53,7 +53,7 @@ export default function UploadTrack({ onUploadSuccess }: Props) {
   };
 
   return (
-    <div className="glass border-t border-white/10 px-4 md:px-6 py-3 flex-shrink-0">
+    <div className="glass px-4 md:px-6 py-3 flex-shrink-0" style={{ borderTop: "1px solid var(--separator)" }}>
       <div className="flex items-center justify-between mb-2">
         <button
           onClick={() => setExpanded(!expanded)}
@@ -80,8 +80,11 @@ export default function UploadTrack({ onUploadSuccess }: Props) {
               type="file"
               accept="audio/mp3"
               onChange={handleFileChange}
-              className="text-xs file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20 cursor-pointer"
-              style={{ color: "var(--text-secondary)" }}
+              className="text-xs file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold cursor-pointer"
+              style={{
+                color: "var(--text-secondary)",
+                ['--tw-prose-file-btn' as string]: "var(--glass-border)"
+              }}
             />
             <button onClick={handleUpload} disabled={isUploadDisabled} className="btn-accent text-sm !py-2 !px-5 flex-shrink-0">
               {uploading ? "Uploading..." : "Upload"}
