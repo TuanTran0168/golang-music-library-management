@@ -38,7 +38,7 @@ export default function AuthModal({ onSuccess, onClose }: Props) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+            <div className="absolute inset-0 backdrop-blur-sm" style={{ background: "rgba(0,0,0,0.3)" }} onClick={onClose} />
 
             <div className="glass rounded-2xl p-8 w-full max-w-md relative slide-up">
                 {/* Header */}
@@ -54,24 +54,24 @@ export default function AuthModal({ onSuccess, onClose }: Props) {
                 </div>
 
                 {/* Mode Toggle */}
-                <div className="flex gap-2 mb-6 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.05)" }}>
+                <div className="flex gap-1 mb-6 p-1 rounded-full" style={{ background: "rgba(0,0,0,0.05)" }}>
                     <button
                         type="button"
                         onClick={() => { setMode("login"); setError(""); }}
-                        className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${mode === "login"
-                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
-                            : "text-gray-400 hover:text-white"
-                            }`}
+                        className="flex-1 py-2.5 rounded-full text-sm font-semibold transition-all"
+                        style={mode === "login"
+                            ? { background: "var(--accent)", color: "#fff", boxShadow: "0 2px 8px var(--accent-glow)" }
+                            : { color: "var(--text-muted)", background: "transparent" }}
                     >
                         Sign In
                     </button>
                     <button
                         type="button"
                         onClick={() => { setMode("register"); setError(""); }}
-                        className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${mode === "register"
-                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
-                            : "text-gray-400 hover:text-white"
-                            }`}
+                        className="flex-1 py-2.5 rounded-full text-sm font-semibold transition-all"
+                        style={mode === "register"
+                            ? { background: "var(--accent)", color: "#fff", boxShadow: "0 2px 8px var(--accent-glow)" }
+                            : { color: "var(--text-muted)", background: "transparent" }}
                     >
                         Sign Up
                     </button>
@@ -110,7 +110,7 @@ export default function AuthModal({ onSuccess, onClose }: Props) {
                     />
 
                     {error && (
-                        <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg p-3 fade-in">
+                        <div className="text-sm rounded-lg p-3 fade-in" style={{ color: "#c0392b", background: "rgba(192,57,43,0.1)", border: "1px solid rgba(192,57,43,0.2)" }}>
                             {error}
                         </div>
                     )}
@@ -127,7 +127,16 @@ export default function AuthModal({ onSuccess, onClose }: Props) {
                 {/* Close */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition"
+                    className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition"
+                    style={{ color: "var(--text-muted)", background: "transparent" }}
+                    onMouseEnter={e => {
+                        (e.currentTarget as HTMLButtonElement).style.background = "var(--glass-border)";
+                        (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
+                    }}
+                    onMouseLeave={e => {
+                        (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                        (e.currentTarget as HTMLButtonElement).style.color = "var(--text-muted)";
+                    }}
                 >
                     ✕
                 </button>

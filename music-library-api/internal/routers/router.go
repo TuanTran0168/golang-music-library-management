@@ -20,7 +20,7 @@ func NewRouter(
 
 	api := r.Group("/api")
 
-	RegisterAuthRoutes(api, authHandler)
+	RegisterAuthRoutes(api, authHandler, cfg)
 	RegisterUserRoutes(api, userHandler, cfg)
 	RegisterTrackRoutes(api, trackHandler, cfg)
 	RegisterPlaylistRoutes(api, playlistHandler, cfg)

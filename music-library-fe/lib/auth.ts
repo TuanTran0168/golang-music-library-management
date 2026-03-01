@@ -1,8 +1,9 @@
 import { User, AuthResponse, LoginRequest, RegisterRequest } from "@/types/auth";
-import api from "./api";
+import axios from "axios";
 
 const TOKEN_KEY = "auth_token";
 const USER_KEY = "auth_user";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
 
 export function getToken(): string | null {
     if (typeof window === "undefined") return null;
@@ -40,18 +41,45 @@ export function hasRole(...roles: string[]): boolean {
     return roles.includes(user.role);
 }
 
+// Uses a bare axios call (not the intercepted instance) to avoid infinite loops
+export async function refreshAccessToken(): Promise<string | null> {
+    try {
+        const res = await axios.post<AuthResponse>(
+            `${API_BASE}/auth/refresh`,
+            {},
+            { withCredentials: true } // sends the HTTP-only cookie
+        );
+        const { access_token, user } = res.data;
+        setAuth(access_token, user);
+        return access_token;
+    } catch {
+        clearAuth();
+        return null;
+    }
+}
+
 export async function login(req: LoginRequest): Promise<AuthResponse> {
-    const res = await api.post<AuthResponse>("/auth/login", req);
-    setAuth(res.data.token, res.data.user);
+    const res = await axios.post<AuthResponse>(`${API_BASE}/auth/login`, req, { withCredentials: true });
+    setAuth(res.data.access_token, res.data.user);
     return res.data;
 }
 
 export async function register(req: RegisterRequest): Promise<AuthResponse> {
-    const res = await api.post<AuthResponse>("/auth/register", req);
-    setAuth(res.data.token, res.data.user);
+    const res = await axios.post<AuthResponse>(`${API_BASE}/auth/register`, req, { withCredentials: true });
+    setAuth(res.data.access_token, res.data.user);
     return res.data;
 }
 
-export function logout() {
-    clearAuth();
+export async function logout(): Promise<void> {
+    try {
+        const token = getToken();
+        if (token) {
+            await axios.post(`${API_BASE}/auth/logout`, {}, {
+                withCredentials: true,
+                headers: { Authorization: `Bearer ${token}` }
+            });
+        }
+    } finally {
+        clearAuth();
+    }
 }

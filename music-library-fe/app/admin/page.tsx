@@ -66,9 +66,9 @@ function AdminDashboard() {
     const totalPages = Math.max(1, Math.ceil(totalCount / limit));
 
     const roleColor: Record<string, string> = {
-        admin: "from-red-500 to-orange-500",
-        artist: "from-purple-500 to-pink-500",
-        user: "from-blue-500 to-cyan-500",
+        admin: "from-red-500 to-rose-400",
+        artist: "from-sky-500 to-blue-400",
+        user: "from-indigo-400 to-violet-400",
     };
 
     return (
@@ -94,19 +94,22 @@ function AdminDashboard() {
                         <div className="space-y-2">
                             {users.map((user) => (
                                 <div key={user.id} className="glass-card !rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 fade-in">
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-sm">{user.name}</p>
+                                    <Link href={`/admin/users/${user.id}`} className="flex-1 min-w-0 group">
+                                        <p className="font-semibold text-sm group-hover:text-accent transition">{user.name}</p>
                                         <p className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>{user.email}</p>
-                                    </div>
+                                    </Link>
 
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <Link href={`/admin/users/${user.id}`} className="btn-glass text-xs !py-1.5 !px-3">
+                                            Edit
+                                        </Link>
                                         {["user", "artist", "admin"].map((role) => (
                                             <button
                                                 key={role}
                                                 onClick={() => openRoleModal(user, role)}
                                                 className={`text-xs px-3 py-1.5 rounded-lg font-medium transition capitalize ${user.role === role
                                                     ? `bg-gradient-to-r ${roleColor[role] || "from-purple-500 to-pink-500"} text-white shadow`
-                                                    : "bg-white/5 hover:bg-white/10"
+                                                    : "btn-glass"
                                                     }`}
                                                 style={user.role !== role ? { color: "var(--text-secondary)" } : {}}
                                             >

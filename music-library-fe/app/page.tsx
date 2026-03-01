@@ -39,12 +39,12 @@ export default function Home() {
   const canManagePlaylists = isLoggedIn();
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col" style={{ height: "100dvh", overflow: "hidden" }}>
       <Navbar />
 
       {/* Main content */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Mobile overlay */}
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        {/* Mobile overlay — click outside closes sidebar */}
         <div
           className={`mobile-overlay ${sidebarOpen ? "open" : ""}`}
           onClick={() => setSidebarOpen(false)}
@@ -59,11 +59,12 @@ export default function Home() {
             refetchKey={playlistRefetchKey}
             refetchPlaylists={refetchPlaylists}
             canManage={canManagePlaylists}
+            onClose={() => setSidebarOpen(false)}
           />
         </div>
 
         {/* Track area */}
-        <main className="flex-1 flex flex-col overflow-auto">
+        <main className="flex-1 flex flex-col overflow-hidden min-h-0">
           <TrackList
             playlist={selectedPlaylist}
             onPlay={setCurrentTrack}
