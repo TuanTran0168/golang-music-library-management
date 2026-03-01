@@ -13,13 +13,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
+        />
+        {/* Inline script: apply saved theme BEFORE first paint to avoid flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('improok-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.setAttribute('data-theme','dark')}}catch(e){}})()`,
+          }}
         />
       </head>
       <body>
@@ -48,7 +54,6 @@ export default function RootLayout({
 
         {/* Apple iPhone Air gradient background — 3 iris blobs */}
         <div className="gradient-bg" aria-hidden="true">
-          {/* Lavender blob (center, iPhone 17 purple) */}
           <div className="iris-lavender" />
         </div>
 
