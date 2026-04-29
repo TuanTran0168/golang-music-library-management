@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -29,8 +30,11 @@ type Config struct {
 	RedisURL string
 
 	// Kafka
-	KafkaBrokers string // comma-separated, e.g. "kafka:9092"
-	KafkaTopic   string // e.g. "play-events"
+	KafkaBrokers  string // comma-separated, e.g. "kafka:9092"
+	KafkaTopic    string // e.g. "play-events"
+	KafkaUsername string
+	KafkaPassword string
+	KafkaTLS      bool
 }
 
 func LoadConfig() *Config {
@@ -65,5 +69,8 @@ func LoadConfig() *Config {
 		RedisURL:      os.Getenv("REDIS_URL"),
 		KafkaBrokers:  os.Getenv("KAFKA_BROKERS"),
 		KafkaTopic:    os.Getenv("KAFKA_TOPIC"),
+		KafkaUsername: os.Getenv("KAFKA_USERNAME"),
+		KafkaPassword: os.Getenv("KAFKA_PASSWORD"),
+		KafkaTLS:      strings.EqualFold(os.Getenv("KAFKA_TLS"), "true"),
 	}
 }

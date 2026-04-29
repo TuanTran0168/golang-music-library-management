@@ -3,14 +3,13 @@ package kafka
 import (
 	"context"
 	"encoding/json"
-	"strings"
 	"time"
 
 	kafkago "github.com/segmentio/kafka-go"
 )
 
 type PlayEventMessage struct {
-	UserID   string `json:"user_id"`  // empty string if guest
+	UserID   string `json:"user_id"` // empty string if guest
 	TrackID  string `json:"track_id"`
 	PlayedAt string `json:"played_at"` // RFC3339
 }
@@ -19,13 +18,13 @@ type Producer struct {
 	writer *kafkago.Writer
 }
 
-func NewProducer(brokers string, topic string) *Producer {
-	brokerList := strings.Split(brokers, ",")
+func NewProducer(config ClientConfig) *Producer {
 	writer := &kafkago.Writer{
-		Addr:                   kafkago.TCP(brokerList...),
-		Topic:                  topic,
+		Addr:                   kafkago.TCP(config.brokerList()...),
+		Topic:                  config.Topic,
 		AllowAutoTopicCreation: true,
 		Balancer:               &kafkago.LeastBytes{},
+		Transport:              config.writerTransport(),
 	}
 	return &Producer{writer: writer}
 }

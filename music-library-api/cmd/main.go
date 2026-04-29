@@ -62,11 +62,18 @@ func main() {
 	playEventService := services.NewPlayEventService(playEventRepo, statsCacheRepo, trackService)
 
 	// 7. Initialize Kafka producer
-	producer := kafka.NewProducer(cfg.KafkaBrokers, cfg.KafkaTopic)
+	kafkaConfig := kafka.ClientConfig{
+		Brokers:  cfg.KafkaBrokers,
+		Topic:    cfg.KafkaTopic,
+		Username: cfg.KafkaUsername,
+		Password: cfg.KafkaPassword,
+		TLS:      cfg.KafkaTLS,
+	}
+	producer := kafka.NewProducer(kafkaConfig)
 	defer producer.Close()
 
 	// 8. Start Kafka consumer in background
-	consumer := kafka.NewConsumer(cfg.KafkaBrokers, cfg.KafkaTopic, playEventRepo, statsCacheRepo)
+	consumer := kafka.NewConsumer(kafkaConfig, playEventRepo, statsCacheRepo)
 	defer consumer.Close()
 	go consumer.Start(context.Background())
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"log"
-	"strings"
 
 	"music-library-api/internal/models"
 	"music-library-api/internal/repositories"
@@ -21,18 +20,17 @@ type Consumer struct {
 }
 
 func NewConsumer(
-	brokers string,
-	topic string,
+	config ClientConfig,
 	playRepo repositories.IPlayEventRepository,
 	cacheRepo repositories.IStatsCacheRepository,
 ) *Consumer {
-	brokerList := strings.Split(brokers, ",")
 	reader := kafkago.NewReader(kafkago.ReaderConfig{
-		Brokers:  brokerList,
-		Topic:    topic,
+		Brokers:  config.brokerList(),
+		Topic:    config.Topic,
 		GroupID:  "play-events-consumer",
 		MinBytes: 1,
 		MaxBytes: 10e6,
+		Dialer:   config.readerDialer(),
 	})
 	return &Consumer{
 		reader:    reader,
