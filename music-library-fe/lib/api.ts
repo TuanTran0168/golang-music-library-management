@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { Playlist, Track, Paginated } from "@/types/music";
+import { SummaryResponse, TopTracksResponse, TrackStatsResponse, PlayHistoryResponse, UserStatsResponse } from "@/types/stats";
 import { getToken, clearAuth, refreshAccessToken } from "./auth";
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
@@ -187,6 +188,36 @@ export async function changePassword(data: { current_password: string; new_passw
 // ----------------- Stream URL -----------------
 export function getStreamURL(track: Track): string {
   return `${API_BASE}/tracks/${track.id}/stream`;
+}
+
+// ----------------- Play Events / Stats -----------------
+export async function recordPlay(trackId: string): Promise<void> {
+  await api.post(`/tracks/${trackId}/play`);
+}
+
+export async function getTopTracks(limit = 10): Promise<TopTracksResponse> {
+  const res = await api.get<TopTracksResponse>("/stats/top-tracks", { params: { limit } });
+  return res.data;
+}
+
+export async function getSummary(): Promise<SummaryResponse> {
+  const res = await api.get<SummaryResponse>("/stats/summary");
+  return res.data;
+}
+
+export async function getTrackStats(trackId: string): Promise<TrackStatsResponse> {
+  const res = await api.get<TrackStatsResponse>(`/tracks/${trackId}/stats`);
+  return res.data;
+}
+
+export async function getMyHistory(page = 1, limit = 20): Promise<PlayHistoryResponse> {
+  const res = await api.get<PlayHistoryResponse>("/users/me/history", { params: { page, limit } });
+  return res.data;
+}
+
+export async function getMyStats(): Promise<UserStatsResponse> {
+  const res = await api.get<UserStatsResponse>("/users/me/stats");
+  return res.data;
 }
 
 export default api;

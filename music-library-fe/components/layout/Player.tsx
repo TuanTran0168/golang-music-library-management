@@ -2,7 +2,9 @@
 
 import { useRef, useEffect } from "react";
 import { Track } from "@/types/music";
-import { getStreamURL } from "@/lib/api";
+import { getStreamURL, recordPlay } from "@/lib/api";
+
+const PLAY_THRESHOLD = Number(process.env.NEXT_PUBLIC_PLAY_THRESHOLD_SECONDS) || 10;
 
 interface Props {
   track: Track | null;
@@ -10,13 +12,23 @@ interface Props {
 
 export default function Player({ track }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const hasRecordedRef = useRef(false);
 
   useEffect(() => {
     if (track && audioRef.current) {
       audioRef.current.src = getStreamURL(track);
       audioRef.current.play().catch(console.error);
+      hasRecordedRef.current = false;
     }
   }, [track]);
+
+  function handleTimeUpdate() {
+    if (!audioRef.current || !track || hasRecordedRef.current) return;
+    if (audioRef.current.currentTime >= PLAY_THRESHOLD) {
+      hasRecordedRef.current = true;
+      recordPlay(track.id).catch(() => {});
+    }
+  }
 
   return (
     <div className="glass flex-shrink-0" style={{ borderTop: "1px solid var(--separator)" }}>
@@ -33,7 +45,7 @@ export default function Player({ track }: Props) {
 
             {/* Audio Player */}
             <div className="flex-grow max-w-md md:max-w-lg">
-              <audio ref={audioRef} controls className="w-full h-9" />
+              <audio ref={audioRef} controls className="w-full h-9" onTimeUpdate={handleTimeUpdate} />
             </div>
           </>
         ) : (
