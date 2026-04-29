@@ -1,21 +1,33 @@
 basePath: /api
 definitions:
-  dto.AuthResponse:
+  dto.GenreStatResponse:
     properties:
-      token:
+      genre:
         type: string
-      user:
-        $ref: '#/definitions/dto.UserResponse'
+      play_count:
+        type: integer
     type: object
-  dto.LoginRequest:
+  dto.PlayHistoryItem:
     properties:
-      email:
+      event_id:
         type: string
-      password:
+      played_at:
         type: string
-    required:
-    - email
-    - password
+      track:
+        $ref: '#/definitions/dto.TrackResponse'
+    type: object
+  dto.PlayHistoryResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.PlayHistoryItem'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total_count:
+        type: integer
     type: object
   dto.PlaylistResponse:
     properties:
@@ -36,22 +48,30 @@ definitions:
       user_id:
         type: string
     type: object
-  dto.RegisterRequest:
+  dto.SummaryResponse:
     properties:
-      email:
-        type: string
-      name:
-        type: string
-      password:
-        minLength: 6
-        type: string
-      role_key:
-        description: Pass ADMIN_ROLE_KEY to register as admin
-        type: string
-    required:
-    - email
-    - name
-    - password
+      top_genres:
+        items:
+          $ref: '#/definitions/dto.GenreStatResponse'
+        type: array
+      total_plays:
+        type: integer
+      total_tracks:
+        type: integer
+    type: object
+  dto.TopTrackResponse:
+    properties:
+      play_count:
+        type: integer
+      track:
+        $ref: '#/definitions/dto.TrackResponse'
+    type: object
+  dto.TopTracksResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.TopTrackResponse'
+        type: array
     type: object
   dto.TrackListResponse:
     properties:
@@ -91,16 +111,12 @@ definitions:
       user_id:
         type: string
     type: object
-  dto.UpdateRoleRequest:
+  dto.TrackStatsResponse:
     properties:
-      role:
-        enum:
-        - admin
-        - artist
-        - user
+      play_count:
+        type: integer
+      track_id:
         type: string
-    required:
-    - role
     type: object
   dto.UpdateTrackRequest:
     properties:
@@ -118,20 +134,14 @@ definitions:
     - artist
     - title
     type: object
-  dto.UserResponse:
+  dto.UserStatsResponse:
     properties:
-      created_at:
-        type: string
-      email:
-        type: string
-      id:
-        type: string
-      name:
-        type: string
-      role:
-        type: string
-      updated_at:
-        type: string
+      top_tracks:
+        items:
+          $ref: '#/definitions/dto.TopTrackResponse'
+        type: array
+      total_plays:
+        type: integer
     type: object
 info:
   contact: {}
@@ -140,62 +150,6 @@ info:
   title: Music Library API
   version: "1.0"
 paths:
-  /auth/login:
-    post:
-      consumes:
-      - application/json
-      description: Login and receive JWT token
-      parameters:
-      - description: Login Data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.AuthResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Login user
-      tags:
-      - Auth
-  /auth/register:
-    post:
-      consumes:
-      - application/json
-      description: Register as admin, artist, or user
-      parameters:
-      - description: Register Data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.RegisterRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/dto.AuthResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Register a new user
-      tags:
-      - Auth
   /playlists:
     get:
       consumes:
@@ -415,6 +369,49 @@ paths:
       summary: Stream playlist as M3U
       tags:
       - Playlists
+  /stats/summary:
+    get:
+      description: Get total plays, total tracks, and top genres
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SummaryResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get system summary
+      tags:
+      - stats
+  /stats/top-tracks:
+    get:
+      description: Get globally most-played tracks
+      parameters:
+      - description: Number of tracks (max 50, default 10)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TopTracksResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get top tracks
+      tags:
+      - stats
   /tracks:
     get:
       consumes:
@@ -595,6 +592,59 @@ paths:
       summary: Update a track
       tags:
       - tracks
+  /tracks/{id}/play:
+    post:
+      description: Record that a track was played. Auth optional — guest plays are
+        tracked anonymously.
+      parameters:
+      - description: Track ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "202":
+          description: Accepted
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Record a play event
+      tags:
+      - stats
+  /tracks/{id}/stats:
+    get:
+      description: Get total play count for a specific track
+      parameters:
+      - description: Track ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TrackStatsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get track play count
+      tags:
+      - stats
   /tracks/{id}/stream:
     get:
       description: Stream MP3 file, support Range header
@@ -649,11 +699,9 @@ paths:
       summary: Search tracks
       tags:
       - tracks
-  /users:
+  /users/me/history:
     get:
-      consumes:
-      - application/json
-      description: Retrieve a paginated list of all users
+      description: Get the current user's play history, sorted newest first
       parameters:
       - description: Page number
         in: query
@@ -669,8 +717,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.PlayHistoryResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -679,50 +726,30 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Get all users (Admin only)
+      summary: Get play history
       tags:
-      - Users
-  /users/{id}/role:
-    patch:
-      consumes:
-      - application/json
-      description: Update a user's role by their ID
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: New role
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/dto.UpdateRoleRequest'
+      - stats
+  /users/me/stats:
+    get:
+      description: Get total plays and top tracks for the current user
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.UserResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
+            $ref: '#/definitions/dto.UserStatsResponse'
+        "500":
+          description: Internal Server Error
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - BearerAuth: []
-      summary: Update user role (Admin only)
+      summary: Get personal stats
       tags:
-      - Users
+      - stats
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer {your token}" to authenticate.

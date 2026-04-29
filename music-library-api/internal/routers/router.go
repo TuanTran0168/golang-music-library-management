@@ -14,6 +14,7 @@ func NewRouter(
 	userHandler *handlers.UserHandler,
 	trackHandler *handlers.TrackHandler,
 	playlistHandler *handlers.PlaylistHandler,
+	playEventHandler *handlers.PlayEventHandler,
 ) *gin.Engine {
 	r := gin.Default()
 	r.Use(middlewares.CORSMiddleware())
@@ -24,6 +25,7 @@ func NewRouter(
 	RegisterUserRoutes(api, userHandler, cfg)
 	RegisterTrackRoutes(api, trackHandler, cfg)
 	RegisterPlaylistRoutes(api, playlistHandler, cfg)
+	RegisterPlayEventRoutes(api, playEventHandler, cfg)
 
 	return r
 }

@@ -15,92 +15,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth/login": {
-            "post": {
-                "description": "Login and receive JWT token",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "Login user",
-                "parameters": [
-                    {
-                        "description": "Login Data",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.LoginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.AuthResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/register": {
-            "post": {
-                "description": "Register as admin, artist, or user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "Register a new user",
-                "parameters": [
-                    {
-                        "description": "Register Data",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.RegisterRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/dto.AuthResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/playlists": {
             "get": {
                 "description": "Retrieve paginated playlists",
@@ -421,6 +335,72 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/summary": {
+            "get": {
+                "description": "Get total plays, total tracks, and top genres",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stats"
+                ],
+                "summary": "Get system summary",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SummaryResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/top-tracks": {
+            "get": {
+                "description": "Get globally most-played tracks",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stats"
+                ],
+                "summary": "Get top tracks",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Number of tracks (max 50, default 10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TopTracksResponse"
                         }
                     },
                     "500": {
@@ -762,6 +742,85 @@ const docTemplate = `{
                 }
             }
         },
+        "/tracks/{id}/play": {
+            "post": {
+                "description": "Record that a track was played. Auth optional — guest plays are tracked anonymously.",
+                "tags": [
+                    "stats"
+                ],
+                "summary": "Record a play event",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Track ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/tracks/{id}/stats": {
+            "get": {
+                "description": "Get total play count for a specific track",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stats"
+                ],
+                "summary": "Get track play count",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Track ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TrackStatsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/tracks/{id}/stream": {
             "get": {
                 "description": "Stream MP3 file, support Range header",
@@ -794,24 +853,21 @@ const docTemplate = `{
                 }
             }
         },
-        "/users": {
+        "/users/me/history": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve a paginated list of all users",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Get the current user's play history, sorted newest first",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Users"
+                    "stats"
                 ],
-                "summary": "Get all users (Admin only)",
+                "summary": "Get play history",
                 "parameters": [
                     {
                         "type": "integer",
@@ -830,8 +886,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.PlayHistoryResponse"
                         }
                     },
                     "500": {
@@ -846,60 +901,30 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/{id}/role": {
-            "patch": {
+        "/users/me/stats": {
+            "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update a user's role by their ID",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Get total plays and top tracks for the current user",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Users"
+                    "stats"
                 ],
-                "summary": "Update user role (Admin only)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "New role",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.UpdateRoleRequest"
-                        }
-                    }
-                ],
+                "summary": "Get personal stats",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.UserResponse"
+                            "$ref": "#/definitions/dto.UserStatsResponse"
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -912,29 +937,48 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dto.AuthResponse": {
+        "dto.GenreStatResponse": {
             "type": "object",
             "properties": {
-                "token": {
+                "genre": {
                     "type": "string"
                 },
-                "user": {
-                    "$ref": "#/definitions/dto.UserResponse"
+                "play_count": {
+                    "type": "integer"
                 }
             }
         },
-        "dto.LoginRequest": {
+        "dto.PlayHistoryItem": {
             "type": "object",
-            "required": [
-                "email",
-                "password"
-            ],
             "properties": {
-                "email": {
+                "event_id": {
                     "type": "string"
                 },
-                "password": {
+                "played_at": {
                     "type": "string"
+                },
+                "track": {
+                    "$ref": "#/definitions/dto.TrackResponse"
+                }
+            }
+        },
+        "dto.PlayHistoryResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PlayHistoryItem"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total_count": {
+                    "type": "integer"
                 }
             }
         },
@@ -967,27 +1011,42 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.RegisterRequest": {
+        "dto.SummaryResponse": {
             "type": "object",
-            "required": [
-                "email",
-                "name",
-                "password"
-            ],
             "properties": {
-                "email": {
-                    "type": "string"
+                "top_genres": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.GenreStatResponse"
+                    }
                 },
-                "name": {
-                    "type": "string"
+                "total_plays": {
+                    "type": "integer"
                 },
-                "password": {
-                    "type": "string",
-                    "minLength": 6
+                "total_tracks": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.TopTrackResponse": {
+            "type": "object",
+            "properties": {
+                "play_count": {
+                    "type": "integer"
                 },
-                "role_key": {
-                    "description": "Pass ADMIN_ROLE_KEY to register as admin",
-                    "type": "string"
+                "track": {
+                    "$ref": "#/definitions/dto.TrackResponse"
+                }
+            }
+        },
+        "dto.TopTracksResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TopTrackResponse"
+                    }
                 }
             }
         },
@@ -1049,19 +1108,14 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateRoleRequest": {
+        "dto.TrackStatsResponse": {
             "type": "object",
-            "required": [
-                "role"
-            ],
             "properties": {
-                "role": {
-                    "type": "string",
-                    "enum": [
-                        "admin",
-                        "artist",
-                        "user"
-                    ]
+                "play_count": {
+                    "type": "integer"
+                },
+                "track_id": {
+                    "type": "string"
                 }
             }
         },
@@ -1089,26 +1143,17 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UserResponse": {
+        "dto.UserStatsResponse": {
             "type": "object",
             "properties": {
-                "created_at": {
-                    "type": "string"
+                "top_tracks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TopTrackResponse"
+                    }
                 },
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
+                "total_plays": {
+                    "type": "integer"
                 }
             }
         }
