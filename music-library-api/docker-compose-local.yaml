@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   mongo_db:
     image: mongo:7.0
@@ -17,13 +15,62 @@ services:
     networks:
       - music_network
 
+  kafka:
+    image: apache/kafka:latest
+    container_name: music_kafka
+    ports:
+      - "9092:9092"
+    volumes:
+      - ./docker/kafka_server_jaas.conf:/etc/kafka/secrets/kafka_server_jaas.conf:ro
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: SASL_PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: SASL_PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,SASL_PLAINTEXT:SASL_PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: SASL_PLAINTEXT
+      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+      KAFKA_OPTS: -Djava.security.auth.login.config=/etc/kafka/secrets/kafka_server_jaas.conf
+      KAFKA_LISTENER_NAME_SASL_PLAINTEXT_PLAIN_SASL_JAAS_CONFIG: org.apache.kafka.common.security.plain.PlainLoginModule required username="admin" password="Admin123" user_admin="Admin123";
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - music_network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: music_kafka_ui
+    ports:
+      - "8090:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL=SASL_PLAINTEXT
+      - KAFKA_CLUSTERS_0_PROPERTIES_SASL_MECHANISM=PLAIN
+      - KAFKA_CLUSTERS_0_PROPERTIES_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule required username="admin" password="Admin123";
+    depends_on:
+      - kafka
+    networks:
+      - music_network
+
+  redis:
+    image: redis:alpine
+    container_name: music_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - music_network
+
   app:
     build:
       context: .
       dockerfile: Dockerfile.local
     image: music_app:dev
     container_name: music_api_dev
-    command: ["tail", "-f", "/dev/null"]
+    command: ["sh", "-c", "sed -i 's/\\r//' run.sh && tail -f /dev/null"]
     volumes:
       - .:/music_api
       - go_mod_cache:/go/pkg/mod
@@ -34,6 +81,8 @@ services:
       - "8080:8080"  # host:container
     depends_on:
       - mongo_db
+      - kafka
+      - redis
     networks:
       - music_network
 

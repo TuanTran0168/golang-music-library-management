@@ -110,7 +110,11 @@ export default function Navbar() {
         router.push("/");
     };
 
-    const navLinks = [{ href: "/artist", label: "🎙 Studio" }];
+    const navLinks = [
+        { href: "/dashboard", label: "📊 Charts" },
+        { href: "/artist", label: "🎙 Studio" },
+    ];
+    if (user) navLinks.push({ href: "/history", label: "🕗 History" });
     if (user) navLinks.push({ href: "/profile", label: "👤 Profile" });
     if (user?.role === "admin") navLinks.push({ href: "/admin", label: "⚙️ Admin" });
 
