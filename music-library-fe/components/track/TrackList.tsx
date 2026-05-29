@@ -8,7 +8,7 @@ import { PlaylistActionModal } from "@/components/playlist";
 
 interface Props {
   playlist: Playlist | null;
-  onPlay: (track: Track) => void;
+  onPlay: (track: Track, allTracks: Track[]) => void;
   searchQuery: string;
   debouncedQuery: string;
   setSearchQuery: Dispatch<SetStateAction<string>>;
@@ -292,7 +292,7 @@ export default function TrackList({
                       className="w-4 h-4 rounded flex-shrink-0" style={{ accentColor: "var(--accent)" }}
                     />
                   )}
-                  <div className="flex-1 min-w-0" onClick={() => onPlay(t)}>
+                  <div className="flex-1 min-w-0" onClick={() => onPlay(t, tracks)}>
                     <div className="marquee-wrap">
                       <p className="marquee-text font-medium text-sm">{t.title}</p>
                     </div>
@@ -303,7 +303,7 @@ export default function TrackList({
                   <span className="text-xs flex-shrink-0" style={{ color: "var(--text-muted)" }}>
                     {formatDuration(t.duration)}
                   </span>
-                  <button className="btn-sm btn-sm-accent flex-shrink-0" onClick={() => onPlay(t)}>▶</button>
+                  <button className="btn-sm btn-sm-accent flex-shrink-0" onClick={() => onPlay(t, tracks)}>▶</button>
                 </div>
 
                 {/* Desktop layout */}
@@ -334,7 +334,7 @@ export default function TrackList({
                     </div>
                     <button
                       className="btn-sm btn-sm-accent opacity-0 group-hover:opacity-100 flex-shrink-0"
-                      onClick={() => onPlay(t)}
+                      onClick={() => onPlay(t, tracks)}
                     >
                       ▶ Play
                     </button>

@@ -5,7 +5,7 @@ import { PlaylistSidebar } from "@/components/playlist";
 import { TrackList } from "@/components/track";
 import { Playlist } from "@/types/music";
 import { hasRole, isLoggedIn } from "@/lib/auth";
-import { playTrack } from "@/hooks/usePlayer";
+import { playQueue } from "@/hooks/usePlayer";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -61,7 +61,7 @@ export default function Home() {
       <main className="flex-1 flex flex-col overflow-hidden min-h-0">
         <TrackList
           playlist={selectedPlaylist}
-          onPlay={playTrack}
+          onPlay={(t, all) => playQueue(all, all.indexOf(t))}
           searchQuery={searchQuery}
           debouncedQuery={debouncedQuery}
           setSearchQuery={setSearchQuery}

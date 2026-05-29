@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { usePlayer, togglePlay, seekTo, setShowNowPlaying } from "@/hooks/usePlayer";
+import { usePlayer, togglePlay, seekTo, setShowNowPlaying, nextTrack, prevTrack } from "@/hooks/usePlayer";
 import { useTheme } from "@/hooks/useTheme";
 
 const fmt = (s: number) => {
@@ -10,18 +10,20 @@ const fmt = (s: number) => {
 };
 
 export default function NowPlaying() {
-  const { track, isPlaying, currentTime, duration, showNowPlaying } = usePlayer();
+  const { track, isPlaying, currentTime, duration, showNowPlaying, queue, queueIndex } = usePlayer();
   const { isDark } = useTheme();
   const touchStartY = useRef<number | null>(null);
 
   if (!showNowPlaying || !track) return null;
 
-  const progress = duration > 0 ? currentTime / duration : 0;
+  const progress    = duration > 0 ? currentTime / duration : 0;
+  const hasQueue    = queue.length > 1;
+  const hasPrev     = queueIndex > 0 || (queueIndex === 0 && currentTime > 3);
+  const hasNext     = queueIndex < queue.length - 1;
 
-  const bg = isDark
+  const bg          = isDark
     ? "linear-gradient(160deg, #0a0a1a 0%, #1a0a2e 55%, #0a1222 100%)"
     : "linear-gradient(160deg, #f0eeff 0%, #e8d8ff 45%, #d8eeff 100%)";
-
   const labelColor  = isDark ? "rgba(255,255,255,0.42)" : "rgba(0,0,0,0.38)";
   const artistColor = isDark ? "rgba(255,255,255,0.52)" : "rgba(0,0,0,0.52)";
   const btnBg       = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)";
@@ -54,9 +56,18 @@ export default function NowPlaying() {
             <path d="M6 9l6 6 6-6" />
           </svg>
         </button>
-        <p className="text-xs font-bold tracking-widest uppercase" style={{ color: labelColor }}>
-          Now Playing
-        </p>
+
+        <div className="text-center">
+          <p className="text-xs font-bold tracking-widest uppercase" style={{ color: labelColor }}>
+            Now Playing
+          </p>
+          {hasQueue && (
+            <p className="text-xs mt-0.5 tabular-nums" style={{ color: labelColor }}>
+              {queueIndex + 1} / {queue.length}
+            </p>
+          )}
+        </div>
+
         <div className="w-9" />
       </div>
 
@@ -99,7 +110,25 @@ export default function NowPlaying() {
       </div>
 
       {/* Controls */}
-      <div className="flex items-center justify-center gap-8 pb-16 flex-shrink-0">
+      <div className="flex items-center justify-center gap-6 pb-16 flex-shrink-0">
+        {/* Prev */}
+        <button
+          onClick={prevTrack}
+          disabled={!hasPrev}
+          className="w-12 h-12 rounded-full flex items-center justify-center transition active:scale-90"
+          style={{
+            background: btnBg,
+            border: `1px solid ${btnBorder}`,
+            color: hasPrev ? btnColor : (isDark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.18)"),
+          }}
+          aria-label="Previous"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" />
+          </svg>
+        </button>
+
+        {/* Play / Pause */}
         <button
           onClick={togglePlay}
           className="w-16 h-16 rounded-full flex items-center justify-center transition active:scale-90"
@@ -116,6 +145,23 @@ export default function NowPlaying() {
               <path d="M8 5v14l11-7z" />
             </svg>
           )}
+        </button>
+
+        {/* Next */}
+        <button
+          onClick={nextTrack}
+          disabled={!hasNext}
+          className="w-12 h-12 rounded-full flex items-center justify-center transition active:scale-90"
+          style={{
+            background: btnBg,
+            border: `1px solid ${btnBorder}`,
+            color: hasNext ? btnColor : (isDark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.18)"),
+          }}
+          aria-label="Next"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM16 6h2v12h-2z" />
+          </svg>
         </button>
       </div>
     </div>
