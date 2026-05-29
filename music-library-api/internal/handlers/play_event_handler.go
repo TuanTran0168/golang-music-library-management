@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -51,9 +52,19 @@ func (h *PlayEventHandler) RecordPlay(c *gin.Context) {
 		userID = uid.(string)
 	}
 
-	if err := h.producer.PublishPlayEvent(c.Request.Context(), userID, trackID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to record play"})
-		return
+	if h.producer != nil {
+		// Kafka path: publish to topic, consumer handles MongoDB write
+		if err := h.producer.PublishPlayEvent(c.Request.Context(), userID, trackID); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to record play"})
+			return
+		}
+	} else {
+		// Goroutine path (no Kafka): write directly to MongoDB async
+		go func() {
+			if err := h.service.RecordPlay(userID, trackID); err != nil {
+				log.Printf("⚠️  direct play record failed: %v", err)
+			}
+		}()
 	}
 
 	c.Status(http.StatusAccepted)

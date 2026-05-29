@@ -61,21 +61,26 @@ func main() {
 	playlistService := services.NewPlaylistService(playlistRepo, trackService, cloudUtil)
 	playEventService := services.NewPlayEventService(playEventRepo, statsCacheRepo, trackService)
 
-	// 7. Initialize Kafka producer
-	kafkaConfig := kafka.ClientConfig{
-		Brokers:  cfg.KafkaBrokers,
-		Topic:    cfg.KafkaTopic,
-		Username: cfg.KafkaUsername,
-		Password: cfg.KafkaPassword,
-		TLS:      cfg.KafkaTLS,
-	}
-	producer := kafka.NewProducer(kafkaConfig)
-	defer producer.Close()
+	// 7. Initialize Kafka producer (optional — skipped if KAFKA_BROKERS is unset)
+	var producer *kafka.Producer
+	if cfg.KafkaBrokers != "" {
+		kafkaConfig := kafka.ClientConfig{
+			Brokers:  cfg.KafkaBrokers,
+			Topic:    cfg.KafkaTopic,
+			Username: cfg.KafkaUsername,
+			Password: cfg.KafkaPassword,
+			TLS:      cfg.KafkaTLS,
+		}
+		producer = kafka.NewProducer(kafkaConfig)
+		defer producer.Close()
 
-	// 8. Start Kafka consumer in background
-	consumer := kafka.NewConsumer(kafkaConfig, playEventRepo, statsCacheRepo)
-	defer consumer.Close()
-	go consumer.Start(context.Background())
+		// 8. Start Kafka consumer in background
+		consumer := kafka.NewConsumer(kafkaConfig, playEventRepo, statsCacheRepo)
+		defer consumer.Close()
+		go consumer.Start(context.Background())
+	} else {
+		log.Println("⚠️  KAFKA_BROKERS not set — play events will be written directly to MongoDB")
+	}
 
 	// 9. Initialize handlers
 	authHandler := handlers.NewAuthHandler(authService)
@@ -97,8 +102,8 @@ func main() {
 
 	// 13. Start server
 	port := cfg.HTTPPort
-	log.Printf("Server running at :%s", port)
+	log.Printf("🚀 Server running at :%s", port)
 	if err := server.Run(":" + port); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		log.Fatalf("❌ Failed to start server: %v", err)
 	}
 }

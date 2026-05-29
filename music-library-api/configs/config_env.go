@@ -45,15 +45,15 @@ func LoadConfig() *Config {
 	}
 
 	if err := godotenv.Load(envFile); err != nil {
-		log.Printf("[WARN] Environment file %s not found, fallback to system environment", envFile)
+		log.Printf("⚠️  %s not found — falling back to system environment", envFile)
 	}
 
-	log.Println("========================== ENVIRONMENT ==========================")
-	log.Printf("Running with environment: %s", envFile)
-	log.Printf("MONGO_URI: %s", os.Getenv("MONGO_URI"))
-	log.Printf("DB_NAME: %s", os.Getenv("DB_NAME"))
-	log.Printf("CLOUD_NAME: %s", os.Getenv("CLOUDINARY_CLOUD_NAME"))
-	log.Println("=================================================================")
+	log.Println("📋 ───────────────── CONFIG ─────────────────")
+	log.Printf("   ENV      : %s", envFile)
+	log.Printf("   MONGO_URI: %s", os.Getenv("MONGO_URI"))
+	log.Printf("   DB_NAME  : %s", os.Getenv("DB_NAME"))
+	log.Printf("   CLOUD    : %s", os.Getenv("CLOUDINARY_CLOUD_NAME"))
+	log.Println("   ─────────────────────────────────────────")
 
 	return &Config{
 		MongoURI:      os.Getenv("MONGO_URI"),

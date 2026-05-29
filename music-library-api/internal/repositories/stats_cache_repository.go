@@ -38,6 +38,9 @@ func NewStatsCacheRepository(client *redis.Client) IStatsCacheRepository {
 }
 
 func (r *statsCacheRepository) get(key string) (string, error) {
+	if r.client == nil {
+		return "", nil
+	}
 	val, err := r.client.Get(context.Background(), key).Result()
 	if err == redis.Nil {
 		return "", nil
@@ -46,6 +49,9 @@ func (r *statsCacheRepository) get(key string) (string, error) {
 }
 
 func (r *statsCacheRepository) set(key, value string) error {
+	if r.client == nil {
+		return nil
+	}
 	return r.client.Set(context.Background(), key, value, cacheTTL).Err()
 }
 
@@ -82,6 +88,9 @@ func (r *statsCacheRepository) SetUserStats(userID string, data string) error {
 }
 
 func (r *statsCacheRepository) InvalidateOnPlay(trackID string, userID string) error {
+	if r.client == nil {
+		return nil
+	}
 	keys := []string{
 		keyTopTracks,
 		keySummary,

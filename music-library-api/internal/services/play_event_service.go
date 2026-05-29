@@ -5,12 +5,14 @@ import (
 
 	"music-library-api/internal/dto"
 	"music-library-api/internal/mappers"
+	"music-library-api/internal/models"
 	"music-library-api/internal/repositories"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type IPlayEventService interface {
+	RecordPlay(userID, trackID string) error
 	GetHistory(userID string, page, limit int) (*dto.PlayHistoryResponse, error)
 	GetTopTracks(limit int) (*dto.TopTracksResponse, error)
 	GetSummary() (*dto.SummaryResponse, error)
@@ -34,6 +36,31 @@ func NewPlayEventService(
 		cacheRepo:    cacheRepo,
 		trackService: trackService,
 	}
+}
+
+func (s *playEventService) RecordPlay(userID, trackID string) error {
+	trackOID, err := primitive.ObjectIDFromHex(trackID)
+	if err != nil {
+		return err
+	}
+
+	var userOID *primitive.ObjectID
+	if userID != "" {
+		id, err := primitive.ObjectIDFromHex(userID)
+		if err == nil {
+			userOID = &id
+		}
+	}
+
+	playEvent := &models.PlayEvent{
+		UserID:  userOID,
+		TrackID: trackOID,
+	}
+	if err := s.repo.Create(playEvent); err != nil {
+		return err
+	}
+
+	return s.cacheRepo.InvalidateOnPlay(trackID, userID)
 }
 
 func (s *playEventService) GetHistory(userID string, page, limit int) (*dto.PlayHistoryResponse, error) {
