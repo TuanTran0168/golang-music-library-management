@@ -1,13 +1,15 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { registerAudio, usePlayer, togglePlay, setShowNowPlaying } from "@/hooks/usePlayer";
+import { registerAudio, usePlayer, togglePlay, nextTrack, prevTrack, setShowNowPlaying } from "@/hooks/usePlayer";
 import NowPlaying from "./NowPlaying";
 
 export default function Player() {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const { track, isPlaying, currentTime, duration } = usePlayer();
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const { track, isPlaying, currentTime, duration, queue, queueIndex } = usePlayer();
+  const progress  = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const hasPrev   = queueIndex > 0 || (queueIndex === 0 && currentTime > 3);
+  const hasNext   = queueIndex < queue.length - 1;
 
   useEffect(() => {
     if (audioRef.current) registerAudio(audioRef.current);
@@ -33,7 +35,7 @@ export default function Player() {
         )}
 
         <div
-          className="flex items-center gap-3 px-4 py-2.5 max-w-screen-xl mx-auto cursor-pointer select-none"
+          className="flex items-center gap-2 px-4 py-2.5 max-w-screen-xl mx-auto cursor-pointer select-none"
           onClick={() => track && setShowNowPlaying(true)}
         >
           {track ? (
@@ -49,14 +51,34 @@ export default function Player() {
                 <p className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>{track.artist}</p>
               </div>
 
-              {/* Play/Pause */}
-              <button
-                onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-                className="btn-sm flex-shrink-0"
-                aria-label={isPlaying ? "Pause" : "Play"}
-              >
-                {isPlaying ? "⏸" : "▶"}
-              </button>
+              {/* Controls */}
+              <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={prevTrack}
+                  disabled={!hasPrev}
+                  className="btn-sm"
+                  style={{ opacity: hasPrev ? 1 : 0.3 }}
+                  aria-label="Previous"
+                >
+                  ⏮
+                </button>
+                <button
+                  onClick={togglePlay}
+                  className="btn-sm"
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                >
+                  {isPlaying ? "⏸" : "▶"}
+                </button>
+                <button
+                  onClick={nextTrack}
+                  disabled={!hasNext}
+                  className="btn-sm"
+                  style={{ opacity: hasNext ? 1 : 0.3 }}
+                  aria-label="Next"
+                >
+                  ⏭
+                </button>
+              </div>
             </>
           ) : (
             <p className="text-xs py-0.5" style={{ color: "var(--text-muted)" }}>

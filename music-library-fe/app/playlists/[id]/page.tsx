@@ -10,7 +10,7 @@ import { TrackPickerModal } from "@/components/track";
 import { fetchPlaylistById, fetchTracksFromPlaylist, updatePlaylist, deletePlaylist } from "@/lib/api";
 import { Playlist, Track } from "@/types/music";
 import { getUser, isLoggedIn } from "@/lib/auth";
-import { usePlayer, playTrack } from "@/hooks/usePlayer";
+import { usePlayer, playQueue } from "@/hooks/usePlayer";
 
 const formatDuration = (s: number) => {
     if (isNaN(s) || s < 0) return "0:00";
@@ -199,7 +199,7 @@ function PlaylistEditor() {
                     <div className="flex gap-2">
                         {tracks.length > 0 && (
                             <button
-                                onClick={() => playTrack(tracks[0])}
+                                onClick={() => playQueue(tracks, 0)}
                                 className="btn-sm btn-sm-accent"
                             >
                                 ▶ Play All
@@ -241,7 +241,7 @@ function PlaylistEditor() {
                                     </p>
                                 </div>
                                 <button
-                                    onClick={() => playTrack(t)}
+                                    onClick={() => playQueue(tracks, i)}
                                     className={`btn-sm btn-sm-accent flex-shrink-0 ${isPlaying ? "" : "opacity-0 group-hover:opacity-100"}`}
                                 >
                                     ▶
