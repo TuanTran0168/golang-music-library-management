@@ -3,10 +3,9 @@
 import { useState, useEffect } from "react";
 import { PlaylistSidebar } from "@/components/playlist";
 import { TrackList } from "@/components/track";
-import { Player } from "@/components/layout";
-import { Navbar } from "@/components/layout";
-import { Playlist, Track } from "@/types/music";
+import { Playlist } from "@/types/music";
 import { hasRole, isLoggedIn } from "@/lib/auth";
+import { playTrack } from "@/hooks/usePlayer";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -19,7 +18,6 @@ function useDebounce<T>(value: T, delay: number): T {
 
 export default function Home() {
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedQuery = useDebounce(searchQuery, 400);
   const [activeView, setActiveView] = useState<"all" | string>("all");
@@ -39,48 +37,40 @@ export default function Home() {
   const canManagePlaylists = isLoggedIn();
 
   return (
-    <div className="flex flex-col" style={{ height: "100dvh", overflow: "hidden" }}>
-      <Navbar />
+    <div className="flex flex-1 overflow-hidden min-h-0">
+      {/* Mobile overlay — click outside closes sidebar */}
+      <div
+        className={`mobile-overlay ${sidebarOpen ? "open" : ""}`}
+        onClick={() => setSidebarOpen(false)}
+      />
 
-      {/* Main content */}
-      <div className="flex flex-1 overflow-hidden min-h-0">
-        {/* Mobile overlay — click outside closes sidebar */}
-        <div
-          className={`mobile-overlay ${sidebarOpen ? "open" : ""}`}
-          onClick={() => setSidebarOpen(false)}
+      {/* Sidebar */}
+      <div className={`mobile-sidebar md:relative md:translate-x-0 md:block ${sidebarOpen ? "open" : ""}`}>
+        <PlaylistSidebar
+          onSelect={handleSidebarSelect}
+          activeView={activeView}
+          setActiveView={setActiveView}
+          refetchKey={playlistRefetchKey}
+          refetchPlaylists={refetchPlaylists}
+          canManage={canManagePlaylists}
+          onClose={() => setSidebarOpen(false)}
         />
-
-        {/* Sidebar */}
-        <div className={`mobile-sidebar md:relative md:translate-x-0 md:block ${sidebarOpen ? "open" : ""}`}>
-          <PlaylistSidebar
-            onSelect={handleSidebarSelect}
-            activeView={activeView}
-            setActiveView={setActiveView}
-            refetchKey={playlistRefetchKey}
-            refetchPlaylists={refetchPlaylists}
-            canManage={canManagePlaylists}
-            onClose={() => setSidebarOpen(false)}
-          />
-        </div>
-
-        {/* Track area */}
-        <main className="flex-1 flex flex-col overflow-hidden min-h-0">
-          <TrackList
-            playlist={selectedPlaylist}
-            onPlay={setCurrentTrack}
-            searchQuery={searchQuery}
-            debouncedQuery={debouncedQuery}
-            setSearchQuery={setSearchQuery}
-            refetchPlaylists={refetchPlaylists}
-            canUpload={canUpload}
-            canManagePlaylists={canManagePlaylists}
-            onSidebarToggle={() => setSidebarOpen(true)}
-          />
-        </main>
       </div>
 
-      {/* Player */}
-      <Player track={currentTrack} />
+      {/* Track area */}
+      <main className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <TrackList
+          playlist={selectedPlaylist}
+          onPlay={playTrack}
+          searchQuery={searchQuery}
+          debouncedQuery={debouncedQuery}
+          setSearchQuery={setSearchQuery}
+          refetchPlaylists={refetchPlaylists}
+          canUpload={canUpload}
+          canManagePlaylists={canManagePlaylists}
+          onSidebarToggle={() => setSidebarOpen(true)}
+        />
+      </main>
     </div>
   );
 }

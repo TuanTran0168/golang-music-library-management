@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import toast from "react-hot-toast";
-import { Navbar } from "@/components/layout";
 import { RoleGuard } from "@/components/auth";
 import { ConfirmModal } from "@/components/common";
 import { fetchTrackById, updateTrack, deleteTrack } from "@/lib/api";
@@ -13,12 +12,9 @@ import { getUser } from "@/lib/auth";
 
 export default function TrackDetailPage() {
     return (
-        <div className="flex flex-col h-screen">
-            <Navbar />
-            <RoleGuard roles={["admin", "artist"]}>
-                <TrackEditor />
-            </RoleGuard>
-        </div>
+        <RoleGuard roles={["admin", "artist"]}>
+            <TrackEditor />
+        </RoleGuard>
     );
 }
 
@@ -101,7 +97,7 @@ function TrackEditor() {
                 <div className="glass rounded-2xl p-10 text-center">
                     <p className="text-4xl mb-3">❌</p>
                     <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{error || "Track not found"}</p>
-                    <Link href="/artist" className="btn-accent inline-block mt-4 text-sm !py-2 !px-5">Back to Studio</Link>
+                    <Link href="/artist" className="btn-sm btn-sm-accent inline-flex mt-4" style={{ textDecoration: "none" }}>Back to Studio</Link>
                 </div>
             </div>
         );
@@ -154,7 +150,7 @@ function TrackEditor() {
                             <button
                                 type="submit"
                                 disabled={saving || !isOwnerOrAdmin}
-                                className={`text-sm !py-2 !px-6 transition ${isOwnerOrAdmin ? "btn-accent" : "bg-gray-500/10 text-gray-400 opacity-50 cursor-not-allowed rounded-lg"}`}
+                                className={`transition ${isOwnerOrAdmin ? "btn-accent text-sm" : "btn-sm opacity-50 cursor-not-allowed"}`}
                                 title={!isOwnerOrAdmin ? "No permission to edit" : "Save Changes"}
                             >
                                 {saving ? "Saving..." : "💾 Save Changes"}

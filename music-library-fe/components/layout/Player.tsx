@@ -1,68 +1,74 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Track } from "@/types/music";
-import { getStreamURL, recordPlay } from "@/lib/api";
+import { registerAudio, usePlayer, togglePlay, setShowNowPlaying } from "@/hooks/usePlayer";
+import NowPlaying from "./NowPlaying";
 
-const PLAY_THRESHOLD = Number(process.env.NEXT_PUBLIC_PLAY_THRESHOLD_SECONDS) || 10;
-
-interface Props {
-  track: Track | null;
-}
-
-export default function Player({ track }: Props) {
+export default function Player() {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const hasRecordedRef = useRef(false);
+  const { track, isPlaying, currentTime, duration } = usePlayer();
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   useEffect(() => {
-    if (track && audioRef.current) {
-      audioRef.current.src = getStreamURL(track);
-      audioRef.current.play().catch(console.error);
-      hasRecordedRef.current = false;
-    }
-  }, [track]);
-
-  function handleTimeUpdate() {
-    if (!audioRef.current || !track || hasRecordedRef.current) return;
-    if (audioRef.current.currentTime >= PLAY_THRESHOLD) {
-      hasRecordedRef.current = true;
-      recordPlay(track.id).catch(() => {});
-    }
-  }
+    if (audioRef.current) registerAudio(audioRef.current);
+  }, []);
 
   return (
-    <div className="glass flex-shrink-0" style={{ borderTop: "1px solid var(--separator)" }}>
-      <div className="flex items-center gap-4 p-3 md:p-4 max-w-screen-xl mx-auto">
-        {track ? (
-          <>
-            {/* Track Info */}
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-sm truncate">{track.title}</h3>
-              <p className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>
-                {track.artist}
-              </p>
-            </div>
+    <>
+      <audio ref={audioRef} hidden />
+      <NowPlaying />
 
-            {/* Audio Player */}
-            <div className="flex-grow max-w-md md:max-w-lg">
-              <audio ref={audioRef} controls className="w-full h-9" onTimeUpdate={handleTimeUpdate} />
-            </div>
-          </>
-        ) : (
-          <div className="flex-1 min-w-0">
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Select a track to play
-            </p>
+      <div
+        className="glass flex-shrink-0"
+        style={{ borderTop: "1px solid var(--separator)" }}
+      >
+        {/* Thin progress line */}
+        {track && duration > 0 && (
+          <div className="h-0.5" style={{ background: "var(--separator)" }}>
+            <div
+              className="h-full"
+              style={{ width: `${progress}%`, background: "var(--accent)", transition: "width 0.25s linear" }}
+            />
           </div>
         )}
 
-        {/* Owner */}
-        <div className="hidden md:flex items-center justify-end">
-          <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+        <div
+          className="flex items-center gap-3 px-4 py-2.5 max-w-screen-xl mx-auto cursor-pointer select-none"
+          onClick={() => track && setShowNowPlaying(true)}
+        >
+          {track ? (
+            <>
+              {/* Mini vinyl disc */}
+              <div className={`vinyl-disc w-8 h-8 flex-shrink-0${isPlaying ? " vinyl-spinning" : ""}`}>
+                <div className="vinyl-shimmer" />
+              </div>
+
+              {/* Track info */}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm truncate">{track.title}</p>
+                <p className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>{track.artist}</p>
+              </div>
+
+              {/* Play/Pause */}
+              <button
+                onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+                className="btn-sm flex-shrink-0"
+                aria-label={isPlaying ? "Pause" : "Play"}
+              >
+                {isPlaying ? "⏸" : "▶"}
+              </button>
+            </>
+          ) : (
+            <p className="text-xs py-0.5" style={{ color: "var(--text-muted)" }}>
+              Select a track to play
+            </p>
+          )}
+
+          <span className="hidden md:block text-[11px] ml-auto pl-4 flex-shrink-0" style={{ color: "var(--text-muted)" }}>
             © 2026 Trần Đăng Tuấn
           </span>
         </div>
       </div>
-    </div>
+    </>
   );
 }

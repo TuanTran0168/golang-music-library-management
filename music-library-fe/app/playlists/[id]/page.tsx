@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Navbar } from "@/components/layout";
+import { RoleGuard } from "@/components/auth";
 import { ConfirmModal } from "@/components/common";
 import { TrackPickerModal } from "@/components/track";
 import { fetchPlaylistById, fetchTracksFromPlaylist, updatePlaylist, deletePlaylist } from "@/lib/api";
 import { Playlist, Track } from "@/types/music";
 import { getUser, isLoggedIn } from "@/lib/auth";
+import { usePlayer, playTrack } from "@/hooks/usePlayer";
 
 const formatDuration = (s: number) => {
     if (isNaN(s) || s < 0) return "0:00";
@@ -18,10 +19,9 @@ const formatDuration = (s: number) => {
 
 export default function PlaylistDetailPage() {
     return (
-        <div className="flex flex-col h-screen">
-            <Navbar />
+        <RoleGuard roles={["admin", "artist", "user"]}>
             <PlaylistEditor />
-        </div>
+        </RoleGuard>
     );
 }
 
@@ -31,6 +31,7 @@ function PlaylistEditor() {
     const id = params.id as string;
     const loggedIn = isLoggedIn();
     const user = getUser();
+    const { track: currentTrack } = usePlayer();
 
     const [playlist, setPlaylist] = useState<Playlist | null>(null);
     const isOwnerOrAdmin = user?.role === "admin" || String(user?.id) === String(playlist?.user_id);
@@ -120,7 +121,6 @@ function PlaylistEditor() {
 
     const handleTracksAdded = async () => {
         setShowTrackPicker(false);
-        // Reload playlist data
         const pl = await fetchPlaylistById(id);
         setPlaylist(pl);
         const t = await fetchTracksFromPlaylist(pl);
@@ -130,7 +130,7 @@ function PlaylistEditor() {
     if (loading) {
         return (
             <div className="flex-1 flex items-center justify-center" style={{ color: "var(--text-muted)" }}>
-                <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }} />
             </div>
         );
     }
@@ -141,7 +141,7 @@ function PlaylistEditor() {
                 <div className="glass rounded-2xl p-10 text-center">
                     <p className="text-4xl mb-3">❌</p>
                     <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{error || "Playlist not found"}</p>
-                    <Link href="/" className="btn-accent inline-block mt-4 text-sm !py-2 !px-5">Back to Home</Link>
+                    <Link href="/" className="btn-sm btn-sm-accent inline-flex mt-4" style={{ textDecoration: "none" }}>Back to Home</Link>
                 </div>
             </div>
         );
@@ -161,8 +161,8 @@ function PlaylistEditor() {
                             {editing ? (
                                 <div className="flex gap-2">
                                     <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="glass-input flex-1 p-2 text-sm" />
-                                    <button onClick={handleSaveTitle} disabled={saving} className="btn-accent text-xs !py-2 !px-4">{saving ? "..." : "Save"}</button>
-                                    <button onClick={() => { setEditing(false); setEditTitle(playlist.title); }} className="btn-glass text-xs !py-2 !px-3">✕</button>
+                                    <button onClick={handleSaveTitle} disabled={saving} className="btn-sm btn-sm-accent">{saving ? "..." : "Save"}</button>
+                                    <button onClick={() => { setEditing(false); setEditTitle(playlist.title); }} className="btn-sm">✕</button>
                                 </div>
                             ) : (
                                 <h1 className="text-xl md:text-2xl font-bold text-gradient">🎶 {playlist.title}</h1>
@@ -177,13 +177,15 @@ function PlaylistEditor() {
                                 <button
                                     onClick={() => isOwnerOrAdmin && setEditing(true)}
                                     disabled={!isOwnerOrAdmin}
-                                    className={`text-xs !py-1.5 !px-3 transition ${isOwnerOrAdmin ? "btn-glass text-white" : "text-gray-500 bg-white/5 opacity-50 cursor-not-allowed rounded-lg"}`}
+                                    className="btn-sm"
+                                    style={!isOwnerOrAdmin ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
                                     title={!isOwnerOrAdmin ? "No permission to edit" : "Edit playlist"}
                                 >✏️ Edit</button>
                                 <button
                                     onClick={() => isOwnerOrAdmin && setShowDeletePlaylist(true)}
                                     disabled={!isOwnerOrAdmin}
-                                    className={`text-xs px-3 py-1.5 rounded-lg transition ${isOwnerOrAdmin ? "bg-red-500/10 text-red-400 hover:bg-red-500/20" : "bg-gray-500/10 text-gray-500 opacity-50 cursor-not-allowed"}`}
+                                    className="btn-sm btn-sm-danger"
+                                    style={!isOwnerOrAdmin ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
                                     title={!isOwnerOrAdmin ? "No permission to delete" : "Delete playlist"}
                                 >🗑️</button>
                             </div>
@@ -194,41 +196,70 @@ function PlaylistEditor() {
                 {/* Track list header */}
                 <div className="flex items-center justify-between mb-3">
                     <h2 className="text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>Tracks</h2>
-                    {loggedIn && (
-                        <button
-                            onClick={() => isOwnerOrAdmin && setShowTrackPicker(true)}
-                            disabled={!isOwnerOrAdmin}
-                            className={`text-xs !py-1.5 !px-4 transition ${isOwnerOrAdmin ? "btn-accent" : "bg-gray-500/20 text-gray-400 opacity-50 cursor-not-allowed rounded-lg"}`}
-                            title={!isOwnerOrAdmin ? "No permission to add tracks" : "Add tracks"}
-                        >
-                            ＋ Add Tracks
-                        </button>
-                    )}
+                    <div className="flex gap-2">
+                        {tracks.length > 0 && (
+                            <button
+                                onClick={() => playTrack(tracks[0])}
+                                className="btn-sm btn-sm-accent"
+                            >
+                                ▶ Play All
+                            </button>
+                        )}
+                        {loggedIn && (
+                            <button
+                                onClick={() => isOwnerOrAdmin && setShowTrackPicker(true)}
+                                disabled={!isOwnerOrAdmin}
+                                className="btn-sm"
+                                style={!isOwnerOrAdmin ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
+                                title={!isOwnerOrAdmin ? "No permission to add tracks" : "Add tracks"}
+                            >
+                                ＋ Add
+                            </button>
+                        )}
+                    </div>
                 </div>
+
                 <div className="space-y-2">
-                    {tracks.map((t, i) => (
-                        <div key={t.id} className="glass-card !rounded-xl p-3 flex items-center gap-3 group fade-in" style={{ animationDelay: `${i * 30}ms` }}>
-                            <span className="text-xs w-6 text-center" style={{ color: "var(--text-muted)" }}>
-                                {(i + 1).toString().padStart(2, "0")}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">{t.title}</p>
-                                <p className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>
-                                    {t.artist} • {formatDuration(t.duration)}
-                                </p>
-                            </div>
-                            {loggedIn && (
+                    {tracks.map((t, i) => {
+                        const isPlaying = currentTrack?.id === t.id;
+                        return (
+                            <div
+                                key={t.id}
+                                className="glass-card !rounded-xl p-3 flex items-center gap-3 group fade-in"
+                                style={{
+                                    animationDelay: `${i * 30}ms`,
+                                    ...(isPlaying ? { borderColor: "rgba(0,98,204,0.30)", background: "rgba(0,98,204,0.08)" } : {}),
+                                }}
+                            >
+                                <span className="text-xs w-6 text-center flex-shrink-0" style={{ color: isPlaying ? "var(--accent)" : "var(--text-muted)" }}>
+                                    {isPlaying ? "▶" : (i + 1).toString().padStart(2, "0")}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate" style={isPlaying ? { color: "var(--accent)" } : undefined}>{t.title}</p>
+                                    <p className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>
+                                        {t.artist} • {formatDuration(t.duration)}
+                                    </p>
+                                </div>
                                 <button
-                                    onClick={() => isOwnerOrAdmin && setRemoveTrackTarget(t)}
-                                    disabled={!isOwnerOrAdmin}
-                                    className={`text-xs px-2 py-1 rounded-lg transition ${isOwnerOrAdmin ? "text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100" : "text-gray-500 opacity-30 cursor-not-allowed"}`}
-                                    title={!isOwnerOrAdmin ? "No permission to remove" : "Remove from playlist"}
+                                    onClick={() => playTrack(t)}
+                                    className={`btn-sm btn-sm-accent flex-shrink-0 ${isPlaying ? "" : "opacity-0 group-hover:opacity-100"}`}
                                 >
-                                    ✕
+                                    ▶
                                 </button>
-                            )}
-                        </div>
-                    ))}
+                                {loggedIn && (
+                                    <button
+                                        onClick={() => isOwnerOrAdmin && setRemoveTrackTarget(t)}
+                                        disabled={!isOwnerOrAdmin}
+                                        className="btn-sm btn-sm-danger flex-shrink-0 opacity-0 group-hover:opacity-100"
+                                        style={!isOwnerOrAdmin ? { opacity: 0, cursor: "not-allowed" } : undefined}
+                                        title={!isOwnerOrAdmin ? "No permission to remove" : "Remove from playlist"}
+                                    >
+                                        ✕
+                                    </button>
+                                )}
+                            </div>
+                        );
+                    })}
                     {tracks.length === 0 && (
                         <div className="text-center py-8" style={{ color: "var(--text-muted)" }}>
                             <p className="text-sm">This playlist is empty</p>
@@ -237,7 +268,6 @@ function PlaylistEditor() {
                 </div>
             </div>
 
-            {/* Delete Playlist Modal */}
             {showDeletePlaylist && (
                 <ConfirmModal
                     icon="🗑️"
@@ -251,7 +281,6 @@ function PlaylistEditor() {
                 />
             )}
 
-            {/* Remove Track from Playlist Modal */}
             {removeTrackTarget && (
                 <ConfirmModal
                     icon="🎵"
@@ -265,7 +294,6 @@ function PlaylistEditor() {
                 />
             )}
 
-            {/* Add Tracks Picker Modal */}
             {showTrackPicker && playlist && (
                 <TrackPickerModal
                     playlistId={playlist.id}

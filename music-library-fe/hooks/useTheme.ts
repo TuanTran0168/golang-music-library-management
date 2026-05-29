@@ -1,50 +1,56 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useSyncExternalStore, useCallback } from "react";
 
 type Theme = "light" | "dark";
 
 const STORAGE_KEY = "improok-theme";
 
-function getSystemTheme(): Theme {
-    if (typeof window === "undefined") return "light";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
+// ── Module-level theme store ─────────────────────────────────────────────────
+// Single source of truth for the active theme on the client.
+// useSyncExternalStore will call _read() for the client snapshot and
+// () => "light" for the server snapshot — keeping SSR HTML consistent.
 
-function applyTheme(theme: Theme) {
-    const root = document.documentElement;
-    if (theme === "dark") {
-        root.setAttribute("data-theme", "dark");
-    } else {
-        root.removeAttribute("data-theme");
-    }
-}
+let _cache: Theme | null = null;
+const _listeners = new Set<() => void>();
 
-export function useTheme() {
-    const [theme, setThemeState] = useState<Theme>("light");
-
-    // Initialize from localStorage (or system preference)
-    useEffect(() => {
+function _read(): Theme {
+    if (_cache !== null) return _cache;
+    try {
         const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-        const initial = stored ?? getSystemTheme();
-        setThemeState(initial);
-        applyTheme(initial);
-    }, []);
+        _cache = stored ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    } catch {
+        _cache = "light";
+    }
+    return _cache;
+}
 
-    const setTheme = useCallback((next: Theme) => {
-        setThemeState(next);
+function _write(next: Theme) {
+    _cache = next;
+    try {
         localStorage.setItem(STORAGE_KEY, next);
-        applyTheme(next);
-    }, []);
+        if (next === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
+        } else {
+            document.documentElement.removeAttribute("data-theme");
+        }
+    } catch {}
+    _listeners.forEach((fn) => fn());
+}
 
-    const toggle = useCallback(() => {
-        setThemeState(prev => {
-            const next: Theme = prev === "light" ? "dark" : "light";
-            localStorage.setItem(STORAGE_KEY, next);
-            applyTheme(next);
-            return next;
-        });
-    }, []);
+function _subscribe(notify: () => void) {
+    _listeners.add(notify);
+    return () => { _listeners.delete(notify); };
+}
+
+// ── Hook ────────────────────────────────────────────────────────────────────
+export function useTheme() {
+    // Server snapshot is always "light" → matches SSR HTML → no hydration mismatch.
+    // Client snapshot reads localStorage once, then serves from _cache.
+    const theme = useSyncExternalStore(_subscribe, _read, () => "light" as Theme);
+
+    const setTheme = useCallback((next: Theme) => _write(next), []);
+    const toggle = useCallback(() => _write(_read() === "light" ? "dark" : "light"), []);
 
     return { theme, setTheme, toggle, isDark: theme === "dark" };
 }

@@ -169,9 +169,9 @@ export default function TrackPickerModal({ playlistId, playlistTitle, existingTr
                     <div className="flex items-center gap-2">
                         {totalPages > 1 && (
                             <>
-                                <button className="pagination-btn !px-2 !py-1 text-xs" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>‹</button>
+                                <button className="btn-sm" style={{ height: 28 }} onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>‹</button>
                                 <span className="text-xs" style={{ color: "var(--text-muted)" }}>{page}/{totalPages}</span>
-                                <button className="pagination-btn !px-2 !py-1 text-xs" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>›</button>
+                                <button className="btn-sm" style={{ height: 28 }} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>›</button>
                             </>
                         )}
                     </div>
@@ -179,7 +179,7 @@ export default function TrackPickerModal({ playlistId, playlistTitle, existingTr
                     <button
                         onClick={handleAdd}
                         disabled={submitting || selected.size === 0}
-                        className="btn-accent text-sm !py-2 !px-5"
+                        className="btn-accent text-sm"
                     >
                         {submitting ? "Adding..." : `Add ${selected.size || ""} Track${selected.size !== 1 ? "s" : ""}`}
                     </button>

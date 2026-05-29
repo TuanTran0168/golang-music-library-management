@@ -3,18 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { Navbar } from "@/components/layout";
 import { RoleGuard } from "@/components/auth";
 import { fetchUsers, updateUserRole, UserItem } from "@/lib/api";
 
 export default function AdminPage() {
     return (
-        <div className="flex flex-col h-screen">
-            <Navbar />
-            <RoleGuard roles={["admin"]}>
-                <AdminDashboard />
-            </RoleGuard>
-        </div>
+        <RoleGuard roles={["admin"]}>
+            <AdminDashboard />
+        </RoleGuard>
     );
 }
 
@@ -65,10 +61,16 @@ function AdminDashboard() {
 
     const totalPages = Math.max(1, Math.ceil(totalCount / limit));
 
+    const roleGradient: Record<string, string> = {
+        admin:  "linear-gradient(135deg, #ff453a, #ff6b6b)",
+        artist: "linear-gradient(135deg, #bf5af2, #9f44d3)",
+        user:   "linear-gradient(135deg, #2997ff, #0062cc)",
+    };
+
     const roleColor: Record<string, string> = {
-        admin: "from-red-500 to-rose-400",
-        artist: "from-sky-500 to-blue-400",
-        user: "from-indigo-400 to-violet-400",
+        admin:  "#ff453a",
+        artist: "#bf5af2",
+        user:   "#2997ff",
     };
 
     return (
@@ -81,7 +83,7 @@ function AdminDashboard() {
                             Manage users and their roles ({totalCount} total)
                         </p>
                     </div>
-                    <Link href="/" className="btn-glass text-sm !py-2 !px-4">← Back to Home</Link>
+                    <Link href="/" className="btn-sm" style={{ textDecoration: "none" }}>← Back</Link>
                 </div>
 
                 {loading ? (
@@ -99,23 +101,23 @@ function AdminDashboard() {
                                         <p className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>{user.email}</p>
                                     </Link>
 
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <Link href={`/admin/users/${user.id}`} className="btn-glass text-xs !py-1.5 !px-3">
+                                    <div className="flex items-center gap-2">
+                                        <Link href={`/admin/users/${user.id}`} className="btn-sm" style={{ textDecoration: "none" }}>
                                             Edit
                                         </Link>
-                                        {["user", "artist", "admin"].map((role) => (
-                                            <button
-                                                key={role}
-                                                onClick={() => openRoleModal(user, role)}
-                                                className={`text-xs px-3 py-1.5 rounded-lg font-medium transition capitalize ${user.role === role
-                                                    ? `bg-gradient-to-r ${roleColor[role] || "from-purple-500 to-pink-500"} text-white shadow`
-                                                    : "btn-glass"
-                                                    }`}
-                                                style={user.role !== role ? { color: "var(--text-secondary)" } : {}}
+                                        <div className="relative">
+                                            <select
+                                                value={user.role}
+                                                onChange={(e) => openRoleModal(user, e.target.value)}
+                                                className="role-select"
+                                                style={{ color: roleColor[user.role] ?? "var(--text-secondary)" }}
                                             >
-                                                {role}
-                                            </button>
-                                        ))}
+                                                {["user", "artist", "admin"].map((r) => (
+                                                    <option key={r} value={r}>{r}</option>
+                                                ))}
+                                            </select>
+                                            <span className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-[10px]" style={{ color: roleColor[user.role] }}>▾</span>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -145,24 +147,16 @@ function AdminDashboard() {
                         <p className="text-sm mb-5" style={{ color: "var(--text-secondary)" }}>
                             <span className="capitalize font-medium">{roleModal.user.role}</span>
                             <span className="mx-2">→</span>
-                            <span className={`capitalize font-bold bg-gradient-to-r ${roleColor[roleModal.newRole]} bg-clip-text text-transparent`}>
+                            <span className="capitalize font-bold" style={{ background: roleGradient[roleModal.newRole] ?? "var(--accent)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
                                 {roleModal.newRole}
                             </span>
                         </p>
 
                         <div className="flex gap-3 justify-center">
-                            <button
-                                onClick={() => setRoleModal(null)}
-                                disabled={submitting}
-                                className="btn-glass text-sm !py-2 !px-5"
-                            >
+                            <button onClick={() => setRoleModal(null)} disabled={submitting} className="btn-glass">
                                 Cancel
                             </button>
-                            <button
-                                onClick={handleConfirmRole}
-                                disabled={submitting}
-                                className="btn-accent text-sm !py-2 !px-5"
-                            >
+                            <button onClick={handleConfirmRole} disabled={submitting} className="btn-accent">
                                 {submitting ? "Updating..." : "Confirm"}
                             </button>
                         </div>
