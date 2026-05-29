@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	configs "music-library-api/configs"
@@ -9,6 +10,7 @@ import (
 	router "music-library-api/internal/routers"
 	"music-library-api/internal/services"
 	database "music-library-api/pkg/databases"
+	"music-library-api/pkg/kafka"
 	"music-library-api/pkg/utils"
 
 	_ "music-library-api/docs"
@@ -36,43 +38,72 @@ func main() {
 	database.ConnectMongo(cfg)
 	_, _, mongodb, _ := mgm.DefaultConfigs()
 
+	// 3. Connect Redis
+	redisClient := database.ConnectRedis(cfg)
+
+	// 4. Init Cloudinary
 	cloudUtil, err := utils.NewCloudinaryUtil(cfg)
 	if err != nil {
 		log.Fatal("❌ Failed to init Cloudinary: ", err)
 	}
 
-	// 3. Initialize repositories
+	// 5. Initialize repositories
 	userRepo := repositories.NewUserRepository(mongodb)
 	trackRepo := repositories.NewTrackRepository(mongodb)
 	playlistRepo := repositories.NewPlaylistRepository()
+	playEventRepo := repositories.NewPlayEventRepository(mongodb)
+	statsCacheRepo := repositories.NewStatsCacheRepository(redisClient)
 
-	// 4. Initialize services
+	// 6. Initialize services
 	authService := services.NewAuthService(userRepo, cfg)
 	userService := services.NewUserService(userRepo)
 	trackService := services.NewTrackService(trackRepo, mongodb)
 	playlistService := services.NewPlaylistService(playlistRepo, trackService, cloudUtil)
+	playEventService := services.NewPlayEventService(playEventRepo, statsCacheRepo, trackService)
 
-	// 5. Initialize handlers
+	// 7. Initialize Kafka producer (optional — skipped if KAFKA_BROKERS is unset)
+	var producer *kafka.Producer
+	if cfg.KafkaBrokers != "" {
+		kafkaConfig := kafka.ClientConfig{
+			Brokers:  cfg.KafkaBrokers,
+			Topic:    cfg.KafkaTopic,
+			Username: cfg.KafkaUsername,
+			Password: cfg.KafkaPassword,
+			TLS:      cfg.KafkaTLS,
+		}
+		producer = kafka.NewProducer(kafkaConfig)
+		defer producer.Close()
+
+		// 8. Start Kafka consumer in background
+		consumer := kafka.NewConsumer(kafkaConfig, playEventRepo, statsCacheRepo)
+		defer consumer.Close()
+		go consumer.Start(context.Background())
+	} else {
+		log.Println("⚠️  KAFKA_BROKERS not set — play events will be written directly to MongoDB")
+	}
+
+	// 9. Initialize handlers
 	authHandler := handlers.NewAuthHandler(authService)
 	userHandler := handlers.NewUserHandler(userService)
 	trackHandler := handlers.NewTrackHandler(trackService, mongodb)
 	playlistHandler := handlers.NewPlaylistHandler(playlistService)
+	playEventHandler := handlers.NewPlayEventHandler(playEventService, trackService, producer)
 
-	// 6. Initialize router
-	server := router.NewRouter(cfg, authHandler, userHandler, trackHandler, playlistHandler)
+	// 10. Initialize router
+	server := router.NewRouter(cfg, authHandler, userHandler, trackHandler, playlistHandler, playEventHandler)
 
-	// 7. Swagger
+	// 11. Swagger
 	server.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// 8. Health check
+	// 12. Health check
 	server.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Hello Music Library API!"})
 	})
 
-	// 9. Start server
+	// 13. Start server
 	port := cfg.HTTPPort
-	log.Printf("Server running at :%s", port)
+	log.Printf("🚀 Server running at :%s", port)
 	if err := server.Run(":" + port); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		log.Fatalf("❌ Failed to start server: %v", err)
 	}
 }

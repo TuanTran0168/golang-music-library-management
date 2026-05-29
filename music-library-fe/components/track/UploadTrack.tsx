@@ -2,7 +2,7 @@
 
 import { useState, ChangeEvent } from "react";
 import toast from "react-hot-toast";
-import api, { API_BASE } from "@/lib/api";
+import api from "@/lib/api";
 
 interface Props {
   onUploadSuccess: () => void;
@@ -86,7 +86,7 @@ export default function UploadTrack({ onUploadSuccess }: Props) {
                 ['--tw-prose-file-btn' as string]: "var(--glass-border)"
               }}
             />
-            <button onClick={handleUpload} disabled={isUploadDisabled} className="btn-accent text-sm !py-2 !px-5 flex-shrink-0">
+            <button onClick={handleUpload} disabled={isUploadDisabled} className="btn-sm btn-sm-accent flex-shrink-0">
               {uploading ? "Uploading..." : "Upload"}
             </button>
           </div>

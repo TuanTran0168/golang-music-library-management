@@ -35,7 +35,7 @@ export default function ConfirmModal({
                     <button
                         onClick={onCancel}
                         disabled={loading}
-                        className="btn-glass text-sm !py-2 !px-5"
+                        className="btn-glass text-sm"
                     >
                         {cancelLabel}
                     </button>

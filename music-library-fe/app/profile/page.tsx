@@ -3,19 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { Navbar } from "@/components/layout";
 import { RoleGuard } from "@/components/auth";
 import { fetchMe, updateMe, changePassword, UserItem } from "@/lib/api";
 import { getUser, setAuth, getToken } from "@/lib/auth";
 
 export default function ProfilePage() {
     return (
-        <div className="flex flex-col h-screen">
-            <Navbar />
-            <RoleGuard roles={["admin", "artist", "user"]}>
-                <ProfileDashboard />
-            </RoleGuard>
-        </div>
+        <RoleGuard roles={["admin", "artist", "user"]}>
+            <ProfileDashboard />
+        </RoleGuard>
     );
 }
 
@@ -81,10 +77,10 @@ function ProfileDashboard() {
         }
     };
 
-    const roleColor: Record<string, string> = {
-        admin: "bg-red-100 text-red-700",
-        artist: "bg-purple-100 text-purple-700",
-        user: "bg-blue-100 text-blue-700",
+    const roleBadgeClass: Record<string, string> = {
+        admin: "badge badge-admin",
+        artist: "badge badge-artist",
+        user: "badge badge-user",
     };
 
     if (loading) return (
@@ -102,7 +98,7 @@ function ProfileDashboard() {
                         <h1 className="text-2xl md:text-3xl font-bold text-gradient">My Profile</h1>
                         <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Manage your account information</p>
                     </div>
-                    <Link href="/" className="btn-glass text-sm !py-2 !px-4">← Back</Link>
+                    <Link href="/" className="btn-sm" style={{ textDecoration: "none" }}>← Back</Link>
                 </div>
 
                 {/* User badge */}
@@ -114,7 +110,7 @@ function ProfileDashboard() {
                         <div>
                             <p className="font-bold text-lg">{user.name}</p>
                             <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{user.email}</p>
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold mt-1 inline-block ${roleColor[user.role] || "bg-gray-100 text-gray-600"}`}>
+                            <span className={`mt-1 ${roleBadgeClass[user.role] ?? "badge"}`}>
                                 {user.role}
                             </span>
                         </div>

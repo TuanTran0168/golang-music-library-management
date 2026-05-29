@@ -8,7 +8,7 @@ import { PlaylistActionModal } from "@/components/playlist";
 
 interface Props {
   playlist: Playlist | null;
-  onPlay: (track: Track) => void;
+  onPlay: (track: Track, allTracks: Track[]) => void;
   searchQuery: string;
   debouncedQuery: string;
   setSearchQuery: Dispatch<SetStateAction<string>>;
@@ -229,8 +229,7 @@ export default function TrackList({
           {onSidebarToggle && (
             <button
               onClick={onSidebarToggle}
-              className="md:hidden btn-glass !p-1.5 flex items-center justify-center rounded-lg"
-              style={{ color: "var(--text-secondary)" }}
+              className="md:hidden btn-sm"
               aria-label="Open sidebar"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -249,11 +248,7 @@ export default function TrackList({
         </div>
 
         {selectedTrackIds.length > 0 && canManagePlaylists && (
-          <button
-            onClick={() => setIsActionModalOpen(true)}
-            disabled={loading}
-            className="btn-accent text-xs !py-2 !px-4"
-          >
+          <button onClick={() => setIsActionModalOpen(true)} disabled={loading} className="btn-sm btn-sm-accent">
             Playlist Action ({selectedTrackIds.length})
           </button>
         )}
@@ -297,8 +292,10 @@ export default function TrackList({
                       className="w-4 h-4 rounded flex-shrink-0" style={{ accentColor: "var(--accent)" }}
                     />
                   )}
-                  <div className="flex-1 min-w-0" onClick={() => onPlay(t)}>
-                    <p className="font-medium truncate text-sm">{t.title}</p>
+                  <div className="flex-1 min-w-0" onClick={() => onPlay(t, tracks)}>
+                    <div className="marquee-wrap">
+                      <p className="marquee-text font-medium text-sm">{t.title}</p>
+                    </div>
                     <p className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>
                       {t.artist} {t.album ? `• ${t.album}` : ""}
                     </p>
@@ -306,12 +303,7 @@ export default function TrackList({
                   <span className="text-xs flex-shrink-0" style={{ color: "var(--text-muted)" }}>
                     {formatDuration(t.duration)}
                   </span>
-                  <button
-                    className="btn-accent !py-1.5 !px-3 !text-xs !rounded-lg flex-shrink-0 transition"
-                    onClick={() => onPlay(t)}
-                  >
-                    ▶
-                  </button>
+                  <button className="btn-sm btn-sm-accent flex-shrink-0" onClick={() => onPlay(t, tracks)}>▶</button>
                 </div>
 
                 {/* Desktop layout */}
@@ -333,14 +325,16 @@ export default function TrackList({
 
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate text-sm">{t.title}</p>
+                      <div className="marquee-wrap">
+                        <p className="marquee-text font-medium text-sm">{t.title}</p>
+                      </div>
                       <p className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>
                         {t.artist}
                       </p>
                     </div>
                     <button
-                      className="btn-accent !py-1 !px-3 !text-xs !rounded-lg opacity-0 group-hover:opacity-100 flex-shrink-0 transition"
-                      onClick={() => onPlay(t)}
+                      className="btn-sm btn-sm-accent opacity-0 group-hover:opacity-100 flex-shrink-0"
+                      onClick={() => onPlay(t, tracks)}
                     >
                       ▶ Play
                     </button>

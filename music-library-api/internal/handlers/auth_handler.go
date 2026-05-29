@@ -38,7 +38,16 @@ func clearRefreshCookie(c *gin.Context) {
 	c.SetCookie(refreshCookieName, "", -1, "/", "", false, true)
 }
 
-// @Summary Register a new user
+// Register godoc
+// @Summary      Register a new user
+// @Description  Create a new user account. Provide role_key only when registering as admin.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      dto.RegisterRequest  true  "User registration info"
+// @Success      201   {object}  dto.AuthResponse
+// @Failure      400   {object}  map[string]string
+// @Router       /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req dto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -56,6 +65,15 @@ func (h *AuthHandler) Register(c *gin.Context) {
 }
 
 // @Summary Login user — returns access_token in body, refresh_token as HttpOnly cookie
+// @Description  Authenticate user. Returns access_token in body and refresh_token as HttpOnly cookie.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      dto.LoginRequest  true  "User login credentials"
+// @Success      200   {object}  dto.AuthResponse
+// @Failure      400   {object}  map[string]string
+// @Failure      401   {object}  map[string]string
+// @Router       /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -74,6 +92,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 }
 
 // @Summary Refresh access token using the HttpOnly refresh_token cookie
+// @Description  Refresh access token using the HttpOnly refresh_token cookie.
+// @Tags         auth
+// @Produce      json
+// @Param        Cookie  header    string  true  "refresh_token cookie"
+// @Success      200            {object}  dto.AuthResponse
+// @Failure      401            {object}  map[string]string
+// @Router       /auth/refresh [post]
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	refreshToken, err := c.Cookie(refreshCookieName)
 	if err != nil || refreshToken == "" {
@@ -94,6 +119,13 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 }
 
 // @Summary Logout — revokes session and clears cookie
+// @Description  Revoke the current user's session and clear the refresh_token cookie.
+// @Tags         auth
+// @Produce      json
+// @Success      200  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {

@@ -15,32 +15,26 @@ export default function RoleGuard({ roles, children, fallback }: Props) {
     const [checked, setChecked] = useState(false);
 
     useEffect(() => {
-        if (!isLoggedIn()) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setAllowed(false);
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setChecked(true);
-            return;
-        }
         const user = getUser();
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setAllowed(!!user && roles.includes(user.role));
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setAllowed(isLoggedIn() && !!user && roles.includes(user.role));
         setChecked(true);
     }, [roles]);
 
+    // Server + hydration: render nothing (avoids mismatch with localStorage-dependent checks)
     if (!checked) return null;
 
     if (!allowed) {
         return fallback || (
-            <div className="flex-1 flex items-center justify-center">
-                <div className="glass rounded-2xl p-10 text-center max-w-sm">
-                    <p className="text-4xl mb-4">🔒</p>
+            <div className="flex-1 flex items-center justify-center p-4">
+                <div className="glass-card rounded-2xl p-8 text-center max-w-sm">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] mb-3" style={{ color: "var(--text-muted)" }}>
+                        Restricted
+                    </p>
                     <h2 className="text-xl font-bold mb-2">Access Denied</h2>
                     <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                        You don&apos;t have permission to view this page.
+                        You do not have permission to view this page.
                     </p>
-                    <Link href="/" className="btn-accent inline-block mt-4 text-sm !py-2 !px-5">
+                    <Link href="/" className="btn-sm btn-sm-accent inline-flex mt-5" style={{ textDecoration: "none" }}>
                         Back to Home
                     </Link>
                 </div>
