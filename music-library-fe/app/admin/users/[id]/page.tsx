@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { Navbar } from "@/components/layout";
 import { RoleGuard } from "@/components/auth";
 import { fetchUserById, updateUserRole, updateUserInfo, UserItem } from "@/lib/api";
 
@@ -12,18 +11,14 @@ const ROLES = ["user", "artist", "admin"];
 
 export default function AdminUserDetailPage() {
     return (
-        <div className="flex flex-col h-screen">
-            <Navbar />
-            <RoleGuard roles={["admin"]}>
-                <UserDetailPanel />
-            </RoleGuard>
-        </div>
+        <RoleGuard roles={["admin"]}>
+            <UserDetailPanel />
+        </RoleGuard>
     );
 }
 
 function UserDetailPanel() {
     const { id } = useParams<{ id: string }>();
-    const router = useRouter();
 
     const [user, setUser] = useState<UserItem | null>(null);
     const [loading, setLoading] = useState(true);
@@ -77,10 +72,15 @@ function UserDetailPanel() {
         }
     };
 
-    const roleColor: Record<string, string> = {
-        admin: "bg-red-100 text-red-700",
-        artist: "bg-purple-100 text-purple-700",
-        user: "bg-blue-100 text-blue-700",
+    const roleBadgeClass: Record<string, string> = {
+        admin: "badge badge-admin",
+        artist: "badge badge-artist",
+        user: "badge badge-user",
+    };
+    const roleGradient: Record<string, string> = {
+        admin:  "linear-gradient(135deg, #ff453a, #ff6b6b)",
+        artist: "linear-gradient(135deg, #bf5af2, #9f44d3)",
+        user:   "linear-gradient(135deg, #2997ff, #0062cc)",
     };
 
     if (loading) return (
@@ -94,7 +94,7 @@ function UserDetailPanel() {
             <div className="glass rounded-2xl p-10 text-center">
                 <p className="text-4xl mb-3">👤</p>
                 <p className="font-semibold">User not found</p>
-                <Link href="/admin" className="btn-glass mt-4 inline-block text-sm !py-2 !px-4">← Back to Admin</Link>
+                <Link href="/admin" className="btn-sm mt-4 inline-flex" style={{ textDecoration: "none" }}>← Back to Admin</Link>
             </div>
         </div>
     );
@@ -108,7 +108,7 @@ function UserDetailPanel() {
                         <h1 className="text-2xl md:text-3xl font-bold text-gradient">Edit User</h1>
                         <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Admin · User Management</p>
                     </div>
-                    <Link href="/admin" className="btn-glass text-sm !py-2 !px-4">← Admin</Link>
+                    <Link href="/admin" className="btn-sm" style={{ textDecoration: "none" }}>← Admin</Link>
                 </div>
 
                 {/* User Badge */}
@@ -119,7 +119,7 @@ function UserDetailPanel() {
                     <div>
                         <p className="font-bold text-lg">{user.name}</p>
                         <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{user.email}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold mt-1 inline-block ${roleColor[user.role] || ""}`}>
+                        <span className={`mt-1 ${roleBadgeClass[user.role] ?? "badge"}`}>
                             {user.role}
                         </span>
                     </div>
@@ -147,22 +147,19 @@ function UserDetailPanel() {
                     <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                         Changing to <strong>artist</strong> lets this user upload tracks. <strong>Admin</strong> grants full access.
                     </p>
-                    <div className="flex gap-2 flex-wrap">
+                    <div className="segment-control">
                         {ROLES.map((r) => (
                             <button
                                 key={r}
                                 type="button"
                                 onClick={() => setRole(r)}
-                                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${role === r
-                                        ? "btn-accent"
-                                        : "btn-glass"
-                                    }`}
+                                className={`segment-btn capitalize ${role === r ? "active" : ""}`}
                             >
                                 {r}
                             </button>
                         ))}
                     </div>
-                    <button type="submit" disabled={savingRole || role === user.role} className="btn-glass w-full text-sm" style={{ opacity: role === user.role ? 0.5 : 1 }}>
+                    <button type="submit" disabled={savingRole || role === user.role} className="btn-glass w-full text-sm" style={role === user.role ? { opacity: 0.5 } : undefined}>
                         {savingRole ? "Updating..." : `Set Role to "${role}"`}
                     </button>
                 </form>

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { Navbar } from "@/components/layout";
 import { RoleGuard } from "@/components/auth";
 import { UploadTrack } from "@/components/track";
 import { ConfirmModal } from "@/components/common";
@@ -31,13 +30,9 @@ export default function ArtistPage() {
                     {loggedIn ? "You don't have permission to access the Studio." : "Please sign in to access your Studio and manage your music."}
                 </p>
                 {!loggedIn ? (
-                    <button onClick={() => setShowAuth(true)} className="btn-accent text-sm !py-2 !px-6">
-                        Sign In
-                    </button>
+                    <button onClick={() => setShowAuth(true)} className="btn-accent">Sign In</button>
                 ) : (
-                    <Link href="/" className="btn-accent inline-block text-sm !py-2 !px-5">
-                        Back to Home
-                    </Link>
+                    <Link href="/" className="btn-accent" style={{ textDecoration: "none" }}>Back to Home</Link>
                 )}
             </div>
             {showAuth && <AuthModal onSuccess={() => window.location.reload()} onClose={() => setShowAuth(false)} />}
@@ -45,12 +40,9 @@ export default function ArtistPage() {
     );
 
     return (
-        <div className="flex flex-col h-screen">
-            <Navbar />
-            <RoleGuard roles={["admin", "artist", "user"]} fallback={UnauthenticatedFallback}>
-                <ArtistDashboard />
-            </RoleGuard>
-        </div>
+        <RoleGuard roles={["admin", "artist", "user"]} fallback={UnauthenticatedFallback}>
+            <ArtistDashboard />
+        </RoleGuard>
     );
 }
 
@@ -149,32 +141,18 @@ function ArtistDashboard() {
                                 Manage your music ({totalCount} {tab})
                             </p>
                         </div>
-                        <Link href="/" className="btn-glass text-sm !py-2 !px-4">← Back to Home</Link>
+                        <Link href="/" className="btn-sm" style={{ textDecoration: "none" }}>← Back</Link>
                     </div>
 
                     {/* Tab Toggle */}
-                    <div className="flex gap-2 mb-6 max-w-xs">
+                    <div className="segment-control mb-6">
                         {user?.role !== "user" && (
-                            <button
-                                onClick={() => setTab("tracks")}
-                                className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                                style={tab === "tracks"
-                                    ? { background: "var(--accent)", color: "#fff", boxShadow: "0 2px 10px var(--accent-glow)", border: "1px solid transparent" }
-                                    : { background: "rgba(255,255,255,0.72)", color: "var(--text-secondary)", border: "1px solid var(--separator)", backdropFilter: "blur(12px)" }
-                                }
-                            >
-                                🎵 Tracks
+                            <button onClick={() => setTab("tracks")} className={`segment-btn ${tab === "tracks" ? "active" : ""}`}>
+                                Tracks
                             </button>
                         )}
-                        <button
-                            onClick={() => setTab("playlists")}
-                            className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                            style={tab === "playlists"
-                                ? { background: "var(--accent)", color: "#fff", boxShadow: "0 2px 10px var(--accent-glow)", border: "1px solid transparent" }
-                                : { background: "rgba(255,255,255,0.72)", color: "var(--text-secondary)", border: "1px solid var(--separator)", backdropFilter: "blur(12px)" }
-                            }
-                        >
-                            🎶 Playlists
+                        <button onClick={() => setTab("playlists")} className={`segment-btn ${tab === "playlists" ? "active" : ""}`}>
+                            Playlists
                         </button>
                     </div>
 
@@ -195,8 +173,8 @@ function ArtistDashboard() {
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-2 flex-shrink-0">
-                                            <Link href={`/tracks/${t.id}`} className="btn-glass text-xs !py-1.5 !px-3">✏️ Edit</Link>
-                                            <button onClick={() => setDeleteTarget({ type: "track", item: t })} className="text-xs px-3 py-1.5 rounded-xl transition" style={{ background: "rgba(255,59,48,0.10)", color: "#c0392b", border: "1px solid rgba(255,59,48,0.18)" }}>🗑️ Delete</button>
+                                            <Link href={`/tracks/${t.id}`} className="btn-sm" style={{ textDecoration: "none" }}>Edit</Link>
+                                            <button onClick={() => setDeleteTarget({ type: "track", item: t })} className="btn-sm btn-sm-danger">Delete</button>
                                         </div>
                                     </div>
                                 ))}
@@ -221,11 +199,11 @@ function ArtistDashboard() {
                                 {showCreatePlaylist ? (
                                     <form onSubmit={handleCreatePlaylist} className="glass rounded-xl p-4 flex gap-3 items-center slide-up">
                                         <input type="text" placeholder="Playlist name..." value={newPlaylistTitle} onChange={(e) => setNewPlaylistTitle(e.target.value)} className="glass-input flex-1 p-2.5 text-sm" autoFocus required />
-                                        <button type="submit" disabled={creating || !newPlaylistTitle.trim()} className="btn-accent text-sm !py-2 !px-4">{creating ? "Creating..." : "Create"}</button>
-                                        <button type="button" onClick={() => { setShowCreatePlaylist(false); setNewPlaylistTitle(""); }} className="btn-glass text-sm !py-2 !px-3">✕</button>
+                                        <button type="submit" disabled={creating || !newPlaylistTitle.trim()} className="btn-sm btn-sm-accent">{creating ? "Creating..." : "Create"}</button>
+                                        <button type="button" onClick={() => { setShowCreatePlaylist(false); setNewPlaylistTitle(""); }} className="btn-sm">✕</button>
                                     </form>
                                 ) : (
-                                    <button onClick={() => setShowCreatePlaylist(true)} className="btn-accent text-sm !py-2 !px-5">＋ New Playlist</button>
+                                    <button onClick={() => setShowCreatePlaylist(true)} className="btn-sm btn-sm-accent">＋ New Playlist</button>
                                 )}
                             </div>
                             <div className="space-y-2">
@@ -236,8 +214,8 @@ function ArtistDashboard() {
                                             <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{pl.track_ids?.length || 0} tracks</p>
                                         </div>
                                         <div className="flex items-center gap-2 flex-shrink-0">
-                                            <Link href={`/playlists/${pl.id}`} className="btn-glass text-xs !py-1.5 !px-3">✏️ Edit</Link>
-                                            <button onClick={() => setDeleteTarget({ type: "playlist", item: pl })} className="text-xs px-3 py-1.5 rounded-xl transition" style={{ background: "rgba(255,59,48,0.10)", color: "#c0392b", border: "1px solid rgba(255,59,48,0.18)" }}>🗑️ Delete</button>
+                                            <Link href={`/playlists/${pl.id}`} className="btn-sm" style={{ textDecoration: "none" }}>Edit</Link>
+                                            <button onClick={() => setDeleteTarget({ type: "playlist", item: pl })} className="btn-sm btn-sm-danger">Delete</button>
                                         </div>
                                     </div>
                                 ))}

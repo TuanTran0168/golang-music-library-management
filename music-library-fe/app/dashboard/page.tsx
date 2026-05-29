@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
-import { Navbar } from "@/components/layout";
 import { useTheme } from "@/hooks/useTheme";
 import { getSummary, getTopTracks } from "@/lib/api";
 import { SummaryResponse, TopTracksResponse } from "@/types/stats";
@@ -35,12 +34,7 @@ const PODIUM = [
 ];
 
 export default function DashboardPage() {
-    return (
-        <div className="flex flex-col h-screen">
-            <Navbar />
-            <ChartsDashboard />
-        </div>
-    );
+    return <ChartsDashboard />;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -110,9 +104,7 @@ function ChartsDashboard() {
                             Global top tracks on Improok Music
                         </p>
                     </div>
-                    <Link href="/" className="btn-glass text-sm !py-2 !px-4">
-                        Back to Home
-                    </Link>
+                    <Link href="/" className="btn-sm" style={{ textDecoration: "none" }}>Back</Link>
                 </div>
 
                 {summary && (
@@ -206,7 +198,7 @@ function ChartsDashboard() {
                 )}
 
                 <div className={`grid gap-6 ${genreData.length > 0 ? "lg:grid-cols-2" : ""}`}>
-                    <div className="glass-card rounded-2xl p-5">
+                    <div className="glass-card rounded-2xl p-5 min-w-0 overflow-hidden">
                         <h2 className="text-base font-bold mb-4" style={{ color: "var(--text-primary)" }}>
                             Top 10
                         </h2>
@@ -217,9 +209,7 @@ function ChartsDashboard() {
                                 <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
                                     Be the first to listen!
                                 </p>
-                                <Link href="/" className="btn-accent inline-block mt-4 text-sm !py-2 !px-5">
-                                    Browse Music
-                                </Link>
+                                <Link href="/" className="btn-sm btn-sm-accent mt-4" style={{ textDecoration: "none" }}>Browse Music</Link>
                             </div>
                         ) : (
                             <div className="space-y-3">
@@ -255,7 +245,7 @@ function ChartsDashboard() {
                     </div>
 
                     {genreData.length > 0 && (
-                        <div className="glass-card rounded-2xl p-5">
+                        <div className="glass-card rounded-2xl p-5 min-w-0 overflow-hidden">
                             <h2 className="text-base font-bold mb-4" style={{ color: "var(--text-primary)" }}>
                                 Genre Breakdown
                             </h2>
