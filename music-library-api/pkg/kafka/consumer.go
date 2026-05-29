@@ -48,18 +48,18 @@ func (c *Consumer) Start(ctx context.Context) {
 				log.Println("🛑 Kafka consumer stopped")
 				return
 			}
-			log.Printf("[WARN] kafka read error: %v", err)
+			log.Printf("⚠️  kafka read error: %v", err)
 			continue
 		}
 
 		var event PlayEventMessage
 		if err := json.Unmarshal(msg.Value, &event); err != nil {
-			log.Printf("[WARN] failed to unmarshal play event: %v", err)
+			log.Printf("⚠️  failed to unmarshal play event: %v", err)
 			continue
 		}
 
 		if err := c.processEvent(ctx, event); err != nil {
-			log.Printf("[WARN] failed to process play event: %v", err)
+			log.Printf("⚠️  failed to process play event: %v", err)
 		}
 	}
 }
