@@ -149,30 +149,37 @@ body {
 }
 
 [data-theme="dark"] .gradient-bg {
-  background: linear-gradient(160deg, #060610 0%, #0C0C18 100%);
+  background: linear-gradient(160deg, #050510 0%, #08081a 100%);
 }
 
 /* Dark mode blob overrides — deeper, moodier */
 [data-theme="dark"] .gradient-bg::before {
   background: radial-gradient(circle at 40% 40%,
-      rgba(41, 100, 200, 0.60) 0%,
-      rgba(20, 60, 160, 0.25) 40%,
+      rgba(60, 120, 255, 0.70) 0%,
+      rgba(30, 80, 210, 0.28) 40%,
       transparent 70%);
   filter: blur(80px);
 }
 
 [data-theme="dark"] .gradient-bg::after {
   background: radial-gradient(circle at 60% 60%,
-      rgba(110, 40, 180, 0.50) 0%,
-      rgba(80, 20, 140, 0.20) 40%,
+      rgba(140, 50, 230, 0.62) 0%,
+      rgba(100, 30, 170, 0.24) 40%,
       transparent 70%);
   filter: blur(90px);
 }
 
 [data-theme="dark"] .iris-lavender {
   background: radial-gradient(circle,
-      rgba(80, 40, 180, 0.50) 0%,
-      rgba(50, 20, 130, 0.18) 50%,
+      rgba(110, 55, 215, 0.60) 0%,
+      rgba(72, 32, 155, 0.22) 50%,
+      transparent 70%);
+}
+
+[data-theme="dark"] .iris-pink {
+  background: radial-gradient(circle,
+      rgba(255, 55, 95, 0.32) 0%,
+      rgba(200, 30, 70, 0.12) 50%,
       transparent 70%);
 }
 
@@ -226,6 +233,23 @@ body {
   left: 40%;
   filter: blur(80px);
   animation: iris-drift-b 38s ease-in-out infinite;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.iris-pink {
+  position: absolute;
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+      rgba(255, 110, 180, 0.44) 0%,
+      rgba(255, 80, 150, 0.18) 50%,
+      transparent 70%);
+  bottom: 18%;
+  left: 22%;
+  filter: blur(75px);
+  animation: iris-drift-a 44s ease-in-out infinite reverse;
   will-change: transform;
   pointer-events: none;
 }
@@ -311,12 +335,13 @@ body {
 
 /* Dark mode glass card */
 [data-theme="dark"] .glass-card {
-  background: rgba(22, 22, 32, 0.75);
+  background: rgba(18, 18, 30, 0.78);
   border-color: rgba(255, 255, 255, 0.08);
   box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.25),
-    0 8px 24px rgba(0, 0, 0, 0.35),
-    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+    0 2px 4px rgba(0, 0, 0, 0.30),
+    0 8px 24px rgba(0, 0, 0, 0.42),
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.04);
 }
 
 [data-theme="dark"] .glass-card:hover {
@@ -978,6 +1003,62 @@ input[type="file"]::file-selector-button:hover {
   background: #fff;
   cursor: pointer;
   border: none;
+}
+
+/* NowPlaying seek bar — 4px, accent gradient, hover-scale thumb */
+.seek-bar-np {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  border: none;
+}
+
+.seek-bar-np::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+  margin-top: -6px;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.seek-bar-np:hover::-webkit-slider-thumb,
+.seek-bar-np:focus::-webkit-slider-thumb {
+  transform: scale(1.25);
+}
+
+.seek-bar-np::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+}
+
+/* ================================================
+   Active Bloom — electric glow for featured buttons
+   ================================================ */
+.active-bloom {
+  box-shadow:
+    0 0 0 1px rgba(173, 198, 255, 0.18),
+    0 0 22px rgba(173, 198, 255, 0.26),
+    0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+[data-theme="dark"] .active-bloom {
+  box-shadow:
+    0 0 0 1px rgba(41, 151, 255, 0.22),
+    0 0 30px rgba(41, 151, 255, 0.35),
+    0 4px 16px rgba(0, 0, 0, 0.40);
 }
 
 /* ================================================

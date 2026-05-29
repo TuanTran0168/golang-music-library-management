@@ -228,7 +228,11 @@ function PlaylistEditor() {
                                 className="glass-card !rounded-xl p-3 flex items-center gap-3 group fade-in"
                                 style={{
                                     animationDelay: `${i * 30}ms`,
-                                    ...(isPlaying ? { borderColor: "rgba(0,98,204,0.30)", background: "rgba(0,98,204,0.08)" } : {}),
+                                    ...(isPlaying ? {
+                                        borderColor: "rgba(0,98,204,0.30)",
+                                        background: "rgba(0,98,204,0.08)",
+                                        boxShadow: "inset 3px 0 0 var(--accent), 0 0 0 1px rgba(0,98,204,0.22)",
+                                    } : {}),
                                 }}
                             >
                                 <span className="text-xs w-6 text-center flex-shrink-0" style={{ color: isPlaying ? "var(--accent)" : "var(--text-muted)" }}>

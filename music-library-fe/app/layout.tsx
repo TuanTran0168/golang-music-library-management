@@ -53,9 +53,10 @@ export default function RootLayout({
           }}
         />
 
-        {/* Apple iPhone Air gradient background — 3 iris blobs */}
+        {/* Apple iPhone Air gradient background — 4 iris blobs */}
         <div className="gradient-bg" aria-hidden="true">
           <div className="iris-lavender" />
+          <div className="iris-pink" />
         </div>
 
         <div className="relative z-10 flex flex-col overflow-hidden" style={{ height: "100dvh" }}>

@@ -148,12 +148,15 @@ export default function Navbar() {
                             <Link
                                 key={href}
                                 href={href}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150"
+                                className="flex items-center gap-1.5 px-2 py-1 text-sm font-medium transition-all duration-150"
                                 style={{
                                     color: active ? "var(--accent)" : "var(--text-secondary)",
-                                    background: active
-                                        ? "var(--accent-light)"
-                                        : "transparent",
+                                    background: "transparent",
+                                    fontWeight: active ? 700 : 500,
+                                    borderBottom: active ? "2px solid var(--accent)" : "2px solid transparent",
+                                    borderRadius: 0,
+                                    paddingBottom: 2,
+                                    textDecoration: "none",
                                 }}
                             >
                                 <Icon size={14} strokeWidth={active ? 2.5 : 2} />
